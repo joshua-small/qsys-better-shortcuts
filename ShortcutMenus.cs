@@ -11,9 +11,7 @@ internal static class ShortcutMenus
     {
         var menu = (Menu)Host.Field(window, "mainMenu");
         var view = menu.Items.OfType<MenuItem>().Single(m => (m.Header as string)?.Replace("_", "") == "View");
-        var infoMenu = Descendants(menu).Single(m => ReferenceEquals(m.Command, info));
         Commands.RegisterMenuHint(programmer, "better-shortcuts/programmer-mode");
-        Commands.RegisterMenuHint(infoMenu, "better-shortcuts/component-controls");
 
         MenuItem Action(string id, string label) => new()
         {
@@ -26,7 +24,9 @@ internal static class ShortcutMenus
         sidebars.Items.Add(Action("properties", "Toggle Properties"));
         sidebars.Items.Add(Action("schematic-elements", "Toggle Schematic Elements"));
         sidebars.Items.Add(new Separator());
-        sidebars.Items.Add(Action("all-sidebars", "Toggle All Sidebars"));
+        sidebars.Items.Add(Action("left-dock", "Toggle Left Dock"));
+        sidebars.Items.Add(Action("right-dock", "Toggle Right Dock"));
+        sidebars.Items.Add(Action("all-sidebars", "Toggle All Docks"));
         var separator = new Separator();
         var darkMode = Action("dark-mode", "Toggle Dark Mode");
         view.Items.Add(separator); view.Items.Add(sidebars); view.Items.Add(darkMode);

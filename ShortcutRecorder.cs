@@ -16,6 +16,7 @@ internal sealed class ShortcutRecorder : Border
     internal string Gesture => recording.Gesture;
     internal bool IsRecording => recording.IsRecording;
     internal bool HasCandidate => recording.HasCandidate;
+    internal bool AllowOrdinaryKey { set => recording.AllowOrdinaryKey = value; }
     internal event Action? Changed;
     internal event Action? Confirmed;
     internal event Action? Canceled;
@@ -63,7 +64,7 @@ internal sealed class ShortcutRecorder : Border
         var modifiers = e.KeyboardDevice.Modifiers;
         if (key == Key.Escape && modifiers == ModifierKeys.None) { Cancel(); return; }
         if (key == Key.Enter && modifiers == ModifierKeys.None && HasCandidate) { Confirm(); return; }
-        if (!recording.IsRecording) recording.Begin();
+        if (!recording.IsRecording) recording.NextStroke();
         Capture(key, modifiers);
     }
     private void HandleKeyUp(object sender, KeyEventArgs e)

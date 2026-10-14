@@ -61,4 +61,13 @@ Check(recording.HasCandidate && recording.Gesture == "Ctrl+K", "A complete captu
 recording.Cancel();
 Check(!recording.HasCandidate, "Cancel discards a recorded candidate even after key capture ends.");
 
+recording.Begin(); recording.Capture(Key.N, control | ModifierKeys.Shift); recording.NextStroke(); recording.Capture(Key.P, ModifierKeys.None);
+Check(recording.Gesture == "Ctrl+Shift+N > P" && recording.HasCandidate, "Recorder captures a plain second stroke as a sequence");
+Check(KeybindingPresentation.Text(recording.Gesture, false) == "Ctrl + Shift + N then P", "Sequence renders separated keycaps with then");
+recording.NextStroke(); recording.Capture(Key.F10, control);
+Check(recording.Gesture == "Ctrl+F10", "A third stroke starts a fresh recording");
+recording.NextStroke(); recording.Capture(Key.X, ModifierKeys.None, repeat: true);
+Check(recording.Gesture == "Ctrl+F10", "Repeats do not complete a chord");
+recording.Capture(Key.Escape, ModifierKeys.None);
+Check(!recording.HasCandidate, "Escape cancels a pending second stroke");
 Console.WriteLine($"Passed {checks} WPF formatting, recorder and wheel checks. No Designer process or UI was started.");

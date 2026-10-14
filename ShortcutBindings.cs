@@ -16,8 +16,8 @@ internal sealed class ShortcutBindings
         var description = ModControls.Describe(c, settings);
         bool replacement = ModControls.Proposals.Any(p => p.IsReplacement && p.CommandId == c.Definition.Id);
         return new CommandSnapshot(c.Definition.Id, c.Definition.Name, description.Source,
-            Display(c.Definition.Id, settings.Bindings.Overrides), Display(c.Definition.Id, new()),
-            replacement || c.Definition.When is not null ? description.When : Context(c),
+            Display(c.Definition.Id, settings.Bindings.Overrides), Engine.DefaultDisplay(c.Definition.Id),
+            replacement || c.Definition.When is not null || Commands.DefaultFor(c.Definition.Id) is not null ? description.When : Context(c),
             c.Definition.Native?.OwnerType.FullName, c.Definition.Native?.Name, description.Details, replacement && description.Source != "Q-SYS");
     }).ToArray();
     private static string Context(RegisteredCommand command) => command.Definition.Id switch
