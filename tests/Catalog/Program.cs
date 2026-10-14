@@ -57,3 +57,13 @@ Check(KeybindingPresentation.Text("Context menu: Copy, then Paste", true) == "Co
 Check(KeybindingPresentation.Lines("Unassigned", false).Single().Parts.All(p => !p.IsKey), "Unassigned must not look like a key.");
 Check((rows.Single(r => r.Id == "help/save") with { Keybinding = "Ctrl+Add" }).Matches("NumPad"), "Search must include readable keypad labels.");
 Console.WriteLine($"Passed {checks} catalog, projection and presentation checks; {official.Length} official rows + {ShortcutCatalog.All.Length - official.Length} additional Help rows + {ShortcutTable.InternalGestures.Length} static native gestures.");
+var packReference = ShortcutCatalog.All.First(r => r.Id == "pack-left");
+var pack = new CommandSnapshot("native/pack", "Pack Left", "Better Packing (schematic) / Q-SYS (other contexts)", "Ctrl+Alt+L", "Ctrl+Shift+L",
+    "Schematic; valid unlocked selection; other contexts: native rules", packReference.NativeOwner, packReference.NativeName,
+    "Replaces native packing only in schematic. Second provider: awaiting review.", true);
+var packingRows = ShortcutTable.Build([pack], new Dictionary<string, string> { [pack.Id] = "Ctrl+Alt+L" });
+var packRow = packingRows.Single(r => r.CommandId == pack.Id);
+Check(packRow.Keybinding == "Ctrl+Alt+L" && packRow.Source.StartsWith("User · Better Packing"), "Show current user keys and effective provider together.");
+Check(packRow.When.Contains("Schematic") && packRow.Details.Contains("awaiting review"), "Replacement scope and provider status must survive official table projection.");
+Check(packRow.Details.Contains("Ctrl+Shift+L"), "Keep native default evidence distinct from effective keys.");
+Console.WriteLine($"Passed {checks} total catalog, projection and presentation checks including shared providers.");

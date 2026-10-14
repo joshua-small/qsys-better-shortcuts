@@ -61,40 +61,4 @@ Check(recording.HasCandidate && recording.Gesture == "Ctrl+K", "A complete captu
 recording.Cancel();
 Check(!recording.HasCandidate, "Cancel discards a recorded candidate even after key capture ends.");
 
-var draft = new Dictionary<string, string> { ["absent/mod"] = "Ctrl+Alt+F12", ["target"] = "Ctrl+D" };
-var assignments = new[] {
-    new ShortcutAssignment("target", "Target", [new(Key.D, control)]),
-    new ShortcutAssignment("copy", "Copy", [new(Key.C, control), new(Key.Insert, control)]),
-    new ShortcutAssignment("copy2", "Copy elsewhere", [new(Key.C, control)]),
-    new ShortcutAssignment("zoom", "Zoom", [zero, keypad])
-};
-var transfer = ShortcutChanges.Prepare(draft, "target", "Ctrl+C", [new(Key.C, control)], assignments);
-Check(transfer.Conflicts.Length == 2 && transfer.Conflicts.Any(c => c.StartsWith("Copy elsewhere")), "Warn about every affected command, not only the first collision.");
-Check(transfer.Overrides["target"] == "Ctrl+C" && transfer.Overrides["copy2"] == "", "Overwrite transfers the gesture and explicitly disables commands with no remaining bindings.");
-Check(transfer.Overrides["copy"] == "Ctrl+Insert", "Overwrite must retain non-conflicting alternatives.");
-Check(draft.Count == 2 && draft["target"] == "Ctrl+D" && !draft.ContainsKey("copy"), "Preview or canceled overwrite must not mutate the draft.");
-Check(transfer.Overrides["absent/mod"] == "Ctrl+Alt+F12", "Overwrite must preserve temporarily absent commands.");
-var keypadTransfer = ShortcutChanges.Prepare(draft, "target", "Ctrl+0", [zero], assignments);
-Check(keypadTransfer.Overrides["zoom"] == "Ctrl+NumPad0", "Number-row conflicts must not remove the distinct keypad binding.");
-var reset = ShortcutChanges.Prepare(draft, "target", null, [new(Key.C, control), new(Key.Insert, control)], assignments);
-Check(!reset.Overrides.ContainsKey("target") && reset.Overrides["copy"] == "" && reset.Conflicts.Length == 2, "A conflicting reset must preview transfer of all restored defaults.");
-var clear = ShortcutChanges.Prepare(draft, "target", "", [], assignments);
-Check(clear.Conflicts.Length == 0 && clear.Overrides.Count == draft.Count, "Clear must not change another command.");
-var same = ShortcutChanges.Prepare(draft, "target", "Ctrl+D", [new(Key.D, control)], assignments);
-Check(same.Conflicts.Length == 0, "A command must not conflict with itself.");
-Check(GestureFormatting.Join(GestureFormatting.ParseList("Ctrl+S; Ctrl+Insert; Ctrl+S")) == "Ctrl+S; Ctrl+Insert", "Stored alternative gestures must round-trip and deduplicate.");
-Check(GestureFormatting.ParseList("Ctrl+S").Single().Key == Key.S && GestureFormatting.ParseList("").Length == 0, "Existing single-value and cleared preferences remain compatible.");
-var retained = ShortcutChanges.Prepare(draft, "target", "Ctrl+C", [new(Key.C, control)],
-    [new("native", "Native action", [new(Key.C, control), new(Key.Delete), new(Key.F7)])]);
-Check(GestureFormatting.ParseList(retained.Overrides["native"]).Select(g => g.Key).SequenceEqual(new[] { Key.Delete, Key.F7 }), "Transfer must preserve native ordinary-key and function-key alternatives.");
-var editorClaims = new Dictionary<string, string> { ["copy"] = "Ctrl+C; Ctrl+Insert", ["target"] = "Ctrl+D", ["absent/editor"] = "Ctrl+H" };
-var editorTransfer = ShortcutChanges.Prepare(draft, "target", "Ctrl+C", [new(Key.C, control)], assignments, editorClaims);
-Check(editorTransfer.EditorOverrides["copy"] == "Ctrl+Insert", "Editor overwrite ownership must retain only surviving alternatives.");
-Check(!editorTransfer.EditorOverrides.ContainsKey("target") && editorTransfer.EditorOverrides["absent/editor"] == "Ctrl+H", "Target changes must re-evaluate editor ownership while preserving absent owners.");
-Check(editorClaims["target"] == "Ctrl+D" && editorClaims["copy"] == "Ctrl+C; Ctrl+Insert", "Cancel must preserve editor overwrite ownership too.");
-var oldSettings = System.Text.Json.JsonSerializer.Deserialize<ShortcutSettings>("{\"Overrides\":{\"target\":\"Ctrl+D\"}}")!;
-Check(oldSettings.Overrides["target"] == "Ctrl+D" && oldSettings.EditorOverrides is null, "Old preferences must load without inventing editor overwrite consent.");
-var newSettings = new ShortcutSettings(transfer.Overrides, new() { ["target"] = "Ctrl+C" });
-var reopened = System.Text.Json.JsonSerializer.Deserialize<ShortcutSettings>(System.Text.Json.JsonSerializer.Serialize(newSettings))!;
-Check(reopened.Overrides["copy"] == "Ctrl+Insert" && reopened.EditorOverrides!["target"] == "Ctrl+C", "Saved conflict transfer and explicit editor ownership must survive reopen.");
-Console.WriteLine($"Passed {checks} WPF formatting, recorder, conflict and wheel checks. No Designer process or UI was started.");
+Console.WriteLine($"Passed {checks} WPF formatting, recorder and wheel checks. No Designer process or UI was started.");

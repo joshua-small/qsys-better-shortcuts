@@ -13,8 +13,9 @@ namespace Designer.Modules.BetterShortcuts;
 
 internal static class ShortcutEditor
 {
-    internal static PreferenceEditor<ShortcutSettings> Create(ShortcutSettings value, ShortcutBindings bindings)
+    internal static FrameworkElement Create(ControlDraft shared, ShortcutBindings bindings)
     {
+        var value = shared.Value.Bindings;
         var draft = new Dictionary<string, string>(value.Overrides);
         var draftEditors = new Dictionary<string, string>(value.EditorOverrides ?? new());
         var panel = new Grid { Margin = new Thickness(16) };
@@ -140,7 +141,7 @@ internal static class ShortcutEditor
         var cancel = new Button { Content = "Cancel", Padding = new Thickness(12, 5, 12, 5) };
         editButtons.Children.Add(accept); editButtons.Children.Add(cancel); editing.Children.Add(editButtons);
         ShortcutRow? editingRow = null;
-        ShortcutChange? pendingChange = null;
+        BindingChange? pendingChange = null;
         void CloseEdit()
         {
             editingRow = null; pendingChange = null; gesture.Finish();
@@ -148,7 +149,7 @@ internal static class ShortcutEditor
             table.IsEnabled = search.IsEnabled = controls.IsEnabled = true;
             table.Focus();
         }
-        void ShowChange(ShortcutChange? change)
+        void ShowChange(BindingChange? change)
         {
             pendingChange = change; accept.IsEnabled = change is not null;
             var conflicts = change?.Conflicts ?? [];
@@ -165,6 +166,7 @@ internal static class ShortcutEditor
                 bindings.Validate(new(pendingChange.Overrides, pendingChange.EditorOverrides));
                 draft = pendingChange.Overrides;
                 draftEditors = pendingChange.EditorOverrides;
+                shared.StageBindings(new(draft, draftEditors));
                 var selectedId = editingRow.Id; CloseEdit(); Refresh(selectedId);
                 status.Text = "Staged. Choose OK to save, or Cancel to discard.";
             }
@@ -195,7 +197,7 @@ internal static class ShortcutEditor
         {
             selectedId ??= (table.SelectedItem as ShortcutRow)?.Id;
             var sourceOverrides = new Dictionary<string, string>(draft);
-            var snapshots = bindings.Snapshot(draft);
+            var snapshots = bindings.Snapshot(shared.Value with { Bindings = new(draft, draftEditors) });
             foreach (var entry in snapshots.Where(entry => draftEditors.ContainsKey(entry.Id)))
                 sourceOverrides.TryAdd(entry.Id, entry.Keybinding);
             var rows = ShortcutTable.Build(snapshots, sourceOverrides);
@@ -217,6 +219,7 @@ internal static class ShortcutEditor
                     change(candidate, id);
                     var candidateEditors = new Dictionary<string, string>(draftEditors); candidateEditors.Remove(id);
                     bindings.Validate(new(candidate, candidateEditors)); draft = candidate; draftEditors = candidateEditors;
+                    shared.StageBindings(new(draft, draftEditors));
                     Refresh(selected.Id); status.Text = "Staged. Choose OK to save, or Cancel to discard.";
                 }
                 catch (Exception ex) { status.Text = ex.Message; }
@@ -277,8 +280,17 @@ internal static class ShortcutEditor
                 window.Height = Math.Max(window.ActualHeight, Math.Min(760, SystemParameters.WorkArea.Height - 40));
             }
         };
+        void SharedChanged()
+        {
+            draft = new(shared.Value.Bindings.Overrides); draftEditors = new(shared.Value.Bindings.EditorOverrides ?? new());
+            Refresh();
+        }
+        var review = new Button { Content = "Review mod controls…", Padding = new Thickness(10, 5, 10, 5) };
+        review.Click += (_, _) => Preferences.SelectPage(panel, "mod-controls"); buttons.Children.Add(review);
+        panel.Loaded += (_, _) => { shared.Changed -= SharedChanged; shared.Changed += SharedChanged; ModControls.Changed -= SharedChanged; ModControls.Changed += SharedChanged; SharedChanged(); };
+        panel.Unloaded += (_, _) => { shared.Changed -= SharedChanged; ModControls.Changed -= SharedChanged; };
         Refresh();
-        return new(panel, () => new(draft, draftEditors));
+        return panel;
     }
     private sealed class ViewportHeightConverter : IValueConverter
     {
