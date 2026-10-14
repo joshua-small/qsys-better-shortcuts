@@ -5,6 +5,7 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
+using System.Windows.Media;
 using QsysMods.Core;
 
 namespace Designer.Modules.BetterShortcuts;
@@ -45,12 +46,9 @@ internal static class ShortcutEditor
         object Resource(string name) => Host.Type("ActiproSoftware.Windows.Themes.AssetResourceKeys").GetProperty(name, Host.Static)!.GetValue(null)!;
         var background = Resource("WindowTitleBarExtensionBackgroundActiveBrushKey");
         var foreground = Resource("ContainerForegroundLowNormalBrushKey");
-        var alternate = Resource("ListItemBackgroundHoverBrushKey");
         var selectedBackground = Resource("ListItemBackgroundSelectedNormalBrushKey");
         table.SetResourceReference(Control.BackgroundProperty, background);
         table.SetResourceReference(Control.ForegroundProperty, foreground);
-        table.SetResourceReference(DataGrid.RowBackgroundProperty, background);
-        table.SetResourceReference(DataGrid.AlternatingRowBackgroundProperty, alternate);
         var headerStyle = new Style(typeof(DataGridColumnHeader));
         headerStyle.Setters.Add(new Setter(Control.BackgroundProperty, new DynamicResourceExtension(background)));
         headerStyle.Setters.Add(new Setter(Control.ForegroundProperty, new DynamicResourceExtension(foreground)));
@@ -58,15 +56,33 @@ internal static class ShortcutEditor
         headerStyle.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.SemiBold));
         table.ColumnHeaderStyle = headerStyle;
         var cellStyle = new Style(typeof(DataGridCell));
-        cellStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(8, 6, 8, 6)));
+        cellStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(8, 4, 8, 4)));
         cellStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0)));
-        var selection = new Trigger { Property = DataGridCell.IsSelectedProperty, Value = true };
-        selection.Setters.Add(new Setter(Control.BackgroundProperty, new DynamicResourceExtension(selectedBackground)));
-        selection.Setters.Add(new Setter(Control.ForegroundProperty, new DynamicResourceExtension(foreground)));
-        cellStyle.Triggers.Add(selection);
+        cellStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
+        var cellBorder = new FrameworkElementFactory(typeof(Border));
+        cellBorder.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
+        cellBorder.SetValue(Border.PaddingProperty, new TemplateBindingExtension(Control.PaddingProperty));
+        var content = new FrameworkElementFactory(typeof(ContentPresenter));
+        content.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+        cellBorder.AppendChild(content);
+        cellStyle.Setters.Add(new Setter(Control.TemplateProperty, new ControlTemplate(typeof(DataGridCell)) { VisualTree = cellBorder }));
         table.CellStyle = cellStyle;
         var rowStyle = new Style(typeof(DataGridRow));
+        rowStyle.Setters.Add(new Setter(Control.BackgroundProperty, KeybindingCell.TableBrush("row")));
         rowStyle.Setters.Add(new Setter(FrameworkElement.ToolTipProperty, new Binding(nameof(ShortcutRow.Details))));
+        var rowBorder = new FrameworkElementFactory(typeof(Border));
+        rowBorder.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
+        rowBorder.AppendChild(new FrameworkElementFactory(typeof(DataGridCellsPresenter)));
+        rowStyle.Setters.Add(new Setter(Control.TemplateProperty, new ControlTemplate(typeof(DataGridRow)) { VisualTree = rowBorder }));
+        var alternate = new Trigger { Property = ItemsControl.AlternationIndexProperty, Value = 1 };
+        alternate.Setters.Add(new Setter(Control.BackgroundProperty, KeybindingCell.TableBrush("alternate")));
+        rowStyle.Triggers.Add(alternate);
+        var hover = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+        hover.Setters.Add(new Setter(Control.BackgroundProperty, KeybindingCell.TableBrush("hover")));
+        rowStyle.Triggers.Add(hover);
+        var selection = new Trigger { Property = DataGridRow.IsSelectedProperty, Value = true };
+        selection.Setters.Add(new Setter(Control.BackgroundProperty, new DynamicResourceExtension(selectedBackground)));
+        rowStyle.Triggers.Add(selection);
         table.RowStyle = rowStyle;
         void Column(string title, string property, double width)
         {
@@ -81,7 +97,14 @@ internal static class ShortcutEditor
             });
         }
         Column("Command", nameof(ShortcutRow.Command), 3);
-        Column("Keybinding", nameof(ShortcutRow.Keybinding), 2.2);
+        var keycaps = new FrameworkElementFactory(typeof(KeybindingCell));
+        keycaps.SetBinding(KeybindingCell.RowProperty, new Binding());
+        table.Columns.Add(new DataGridTemplateColumn
+        {
+            Header = "Keybinding", SortMemberPath = nameof(ShortcutRow.KeybindingText),
+            Width = new DataGridLength(2.8, DataGridLengthUnitType.Star), MinWidth = 180,
+            CellTemplate = new DataTemplate { VisualTree = keycaps }
+        });
         Column("When", nameof(ShortcutRow.When), 3);
         Column("Source", nameof(ShortcutRow.Source), 1.7);
         Place(table, 2);
@@ -101,7 +124,7 @@ internal static class ShortcutEditor
             var selected = table.SelectedItem as ShortcutRow;
             gesture.IsEnabled = selected?.CanAssign == true;
             foreach (var action in actions) action.IsEnabled = gesture.IsEnabled;
-            gesture.Text = selected?.CommandId is { } id ? bindings.Display(id, draft) : "";
+            gesture.Text = selected?.CommandId is { } id ? bindings.Input(id, draft) : "";
             detail.Text = selected?.Details ?? "Select a row for details. Reference rows describe mouse gestures or editor actions that cannot be reassigned here.";
             help.Visibility = selected?.SourceUrl is null ? Visibility.Collapsed : Visibility.Visible;
         }

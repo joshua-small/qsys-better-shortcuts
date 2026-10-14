@@ -9,8 +9,10 @@ internal sealed record ShortcutRow(string Id, string Command, string Keybinding,
     string Source, string Details, string? CommandId, string? SourceUrl, string Section)
 {
     public bool CanAssign => CommandId is not null;
+    public string KeybindingText => KeybindingPresentation.Text(Keybinding, !CanAssign);
+    public KeybindingLine[] KeybindingLines => KeybindingPresentation.Lines(Keybinding, !CanAssign);
     public bool Matches(string query) => query.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)
-        .All(term => string.Join(" ", Command, Keybinding, When, Source, Details, Section, CommandId)
+        .All(term => string.Join(" ", Command, Keybinding, KeybindingText, When, Source, Details, Section, CommandId)
             .Contains(term, StringComparison.OrdinalIgnoreCase));
 }
 
