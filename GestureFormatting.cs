@@ -4,6 +4,16 @@ namespace Designer.Modules.BetterShortcuts;
 
 internal static class GestureFormatting
 {
+    internal static string SerializeStroke(Key key, ModifierKeys modifiers)
+    {
+        var parts = new List<string>();
+        if (modifiers.HasFlag(ModifierKeys.Control)) parts.Add("Ctrl");
+        if (modifiers.HasFlag(ModifierKeys.Alt)) parts.Add("Alt");
+        if (modifiers.HasFlag(ModifierKeys.Shift)) parts.Add("Shift");
+        if (modifiers.HasFlag(ModifierKeys.Windows)) parts.Add("Windows");
+        parts.Add(new KeyConverter().ConvertToInvariantString(key)!);
+        return string.Join("+", parts);
+    }
     // DisplayString is presentation metadata, not a second binding. Do not let
     // KeyGestureConverter append it to the serialized key and modifiers.
     internal static string Serialize(KeyGesture? gesture) => gesture is null ? "" :

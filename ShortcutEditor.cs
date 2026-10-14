@@ -141,10 +141,11 @@ internal static class ShortcutEditor
         var cancel = new Button { Content = "Cancel", Padding = new Thickness(12, 5, 12, 5) };
         editButtons.Children.Add(accept); editButtons.Children.Add(cancel); editing.Children.Add(editButtons);
         ShortcutRow? editingRow = null;
+        bool reviewingDefaults = false;
         BindingChange? pendingChange = null;
         void CloseEdit()
         {
-            editingRow = null; pendingChange = null; gesture.Finish();
+            editingRow = null; reviewingDefaults = false; pendingChange = null; gesture.Finish();
             overlay.Visibility = Visibility.Collapsed;
             table.IsEnabled = search.IsEnabled = controls.IsEnabled = true;
             table.Focus();
@@ -160,14 +161,14 @@ internal static class ShortcutEditor
         }
         void CommitEdit()
         {
-            if (pendingChange is null || editingRow is null) return;
+            if (pendingChange is null || (editingRow is null && !reviewingDefaults)) return;
             try
             {
                 bindings.Validate(new(pendingChange.Overrides, pendingChange.EditorOverrides));
                 draft = pendingChange.Overrides;
                 draftEditors = pendingChange.EditorOverrides;
                 shared.StageBindings(new(draft, draftEditors));
-                var selectedId = editingRow.Id; CloseEdit(); Refresh(selectedId);
+                var selectedId = editingRow?.Id; CloseEdit(); Refresh(selectedId);
                 status.Text = "Staged. Choose OK to save, or Cancel to discard.";
             }
             catch (Exception ex) { warning.Text = status.Text = ex.Message; }
@@ -183,7 +184,11 @@ internal static class ShortcutEditor
             table.IsEnabled = search.IsEnabled = controls.IsEnabled = false;
             overlay.Visibility = Visibility.Visible;
             if (reset) accept.Focus();
-            else { gesture.SetGesture(bindings.Input(id, draft)); gesture.Begin(); }
+            else
+            {
+                gesture.AllowOrdinaryKey = Commands.All.Single(c => c.Definition.Id == id).Definition.AllowOrdinaryKey;
+                gesture.SetGesture(bindings.Input(id, draft)); gesture.Begin();
+            }
         }
         var actions = new List<Button>();
         void Select()
@@ -228,6 +233,28 @@ internal static class ShortcutEditor
             return button;
         }
         Button("Clear", (next, id) => next[id] = "");
+        var defaults = new Button { Content = "Review mod defaults", Margin = new Thickness(0, 0, 8, 0), Padding = new Thickness(10, 5, 10, 5) };
+        defaults.Click += (_, _) =>
+        {
+            try
+            {
+                var commands = Commands.All.Where(c => Commands.IsAvailable(c) &&
+                    (c.Definition.DefaultBinding is not null || Commands.DefaultFor(c.Definition.Id) is not null)).ToArray();
+                var requests = commands.ToDictionary(c => c.Definition.Id, c => (string?)ModControls.Bindings.DefaultDisplay(c.Definition.Id));
+                var change = ModControls.Bindings.Prepare(requests, draft, draftEditors);
+                reviewingDefaults = true; editingRow = null;
+                title.Text = "Apply all mod shortcut defaults"; gesture.Visibility = Visibility.Collapsed;
+                ShowChange(change);
+                warning.Text = "This replaces the assignments below and moves any conflicting keys. Other custom bindings stay assigned.\n\n"
+                    + string.Join("\n", commands.Select(c => c.Definition.Name + ": " + requests[c.Definition.Id]))
+                    + (change.Conflicts.Length == 0 ? "" : "\n\nConflicts to overwrite:\n" + string.Join("\n", change.Conflicts));
+                accept.Content = "Apply all";
+                table.IsEnabled = search.IsEnabled = controls.IsEnabled = false;
+                overlay.Visibility = Visibility.Visible; accept.Focus();
+            }
+            catch (Exception ex) { status.Text = ex.Message; }
+        };
+        buttons.Children.Add(defaults);
         foreach (var label in new[] { "Change shortcut", "Reset" })
         {
             var button = new Button { Content = label, Margin = new Thickness(0, 0, 8, 0), Padding = new Thickness(10, 5, 10, 5) };

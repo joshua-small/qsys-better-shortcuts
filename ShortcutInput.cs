@@ -8,8 +8,11 @@ internal sealed class ShortcutRecording
     public bool IsRecording { get; private set; }
     public bool HasCandidate { get; private set; }
     public string Message { get; private set; } = "";
+    private int strokes;
+    public bool AllowOrdinaryKey { get; set; }
     public void Set(string gesture) { Gesture = gesture; IsRecording = false; HasCandidate = false; Message = ""; }
-    public void Begin() { IsRecording = true; HasCandidate = false; Message = "Press a shortcut. Escape cancels."; }
+    public void Begin() { IsRecording = true; HasCandidate = false; strokes = 0; Message = "Press a shortcut, then an optional second key. Enter accepts; Escape cancels."; }
+    public void NextStroke() { if (strokes == 1) IsRecording = true; else Begin(); }
     public void Cancel() { IsRecording = false; HasCandidate = false; Message = "Recording canceled."; }
     public void Capture(Key key, ModifierKeys modifiers, bool repeat = false)
     {
@@ -19,12 +22,15 @@ internal sealed class ShortcutRecording
         { Message = "Hold the modifiers and press another key. Escape cancels."; return; }
         if (key is Key.None or Key.System or Key.ImeProcessed or Key.DeadCharProcessed)
         { Message = "That key could not be recorded. Try another combination."; return; }
-        if ((modifiers & (ModifierKeys.Control | ModifierKeys.Alt | ModifierKeys.Windows)) == 0 && key is not (>= Key.F1 and <= Key.F24))
+        if (strokes == 0 && !AllowOrdinaryKey && (modifiers & (ModifierKeys.Control | ModifierKeys.Alt | ModifierKeys.Windows)) == 0 && key is not (>= Key.F1 and <= Key.F24))
         { Message = "Include Ctrl or Alt, or use a function key. Escape cancels."; return; }
         try
         {
-            Gesture = GestureFormatting.Serialize(new KeyGesture(key, modifiers));
-            IsRecording = false; HasCandidate = true; Message = "Press Enter to accept, or another combination to change it. Escape cancels.";
+            string next = GestureFormatting.SerializeStroke(key, modifiers);
+            Gesture = strokes == 1 ? Gesture + " > " + next : next;
+            strokes++; IsRecording = false; HasCandidate = true;
+            Message = strokes == 1 ? "Press Enter to accept, or press a second key for a chord. Escape cancels."
+                : "Two-stroke chord recorded. Enter accepts; another key starts again; Escape cancels.";
         }
         catch (ArgumentException) { Message = "That combination cannot be assigned. Try another shortcut."; }
     }

@@ -35,7 +35,9 @@ internal static class KeybindingPresentation
         if (reference)
             return value.Split(" / ", StringSplitOptions.TrimEntries).Select(ReferenceLine).ToArray();
         return value.Split(';', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-            .Select(v => Chord(v) ?? new[] { new KeybindingPart(v, false) })
+            .Select(v => v.Split(" > ", StringSplitOptions.TrimEntries).Select((stroke, i) =>
+                (i == 0 ? Array.Empty<KeybindingPart>() : new[] { new KeybindingPart(" then ", false) })
+                    .Concat(Chord(stroke) ?? new[] { new KeybindingPart(stroke, false) })).SelectMany(p => p).ToArray())
             .Select(parts => new KeybindingLine(parts))
             .DistinctBy(line => line.Text, StringComparer.OrdinalIgnoreCase).ToArray();
     }
