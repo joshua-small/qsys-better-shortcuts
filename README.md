@@ -32,7 +32,7 @@ Additional assignable actions focus Inventory, Schematic Pages, User Control Int
 
 Overrides survive temporarily absent mods. Native replacements restore their original gestures on Reset. An override string may contain semicolon-separated alternatives when conflict transfer preserves part of a native binding set; older single-value settings still load. Optional `EditorOverrides` records only explicitly confirmed takeovers of direct editor input bindings, which are removed reversibly while the assignment is active. These confirmations do not grant ownership of unrelated keys. Floating Component Controls Info gets the applicable editor actions without depending on the Info Filter mod. Browser-hosted editors, OS-reserved keys, class bindings and editor scopes created later are not an exhaustive conflict inventory.
 
-Requires [Q-SYS Mods Core](https://github.com/joshua-small/qsys-mods-core) 0.1.1 or newer within 0.1.x, Mod Manager 0.8+, and the exact supported Designer 10.5 build. Use the manager's bundle migration. Build `Designer.Modules.BetterShortcuts.csproj` with .NET 10.0.112, an adjacent Core checkout, and local `DesignerDir` references.
+Requires [Q-SYS Mods Core](https://github.com/joshua-small/qsys-mods-core) 0.1.2 or newer within 0.1.x, Mod Manager 0.8+, and the exact supported Designer 10.5 build. Use the manager's bundle migration. Build `Designer.Modules.BetterShortcuts.csproj` with .NET 10.0.112, an adjacent Core checkout, and local `DesignerDir` references.
 
 Core's guarded native driver verifies registration, duplicate rejection, remapping/reset, sidebar round trips, all seven focus actions, and theme changes (127 registered commands in the inspected host). Routed-command tests are not a claim of physical-key delivery in every editor or operating-system shortcut configuration.
 
@@ -42,10 +42,12 @@ The owner opened the initial table and reported duplicate labels, missing stripe
 
 Extracted from Schematic Tools commit `13c52e6`. [Split tracking](https://github.com/joshua-small/qsys-schematic-tools/issues/4).
 
-## Shared controls (0.1.1)
+## Shared controls (0.1.2)
 
 Core is now the sole binding engine and settings authority. This module is a presentation adapter; it does not install a second set of bindings. Old Overrides and EditorOverrides migrate without losing alternatives, absent-mod keys or explicit editor takeover consent. Core retains those native overrides when Better Shortcuts is absent.
 
-**Review mod controls…** opens the same shared Preferences draft. A first-run review groups new proposals and offers Apply selected, Apply all and Keep current. Conflicts are previewed before Overwrite and apply; Review later leaves a pending menu indicator. Replacements keep the original action's keys. The table reports both user remapping and the selected provider, with native defaults/documentation retained in details. Better Packing's separately registered operations remain distinct from the native Pack actions it replaces.
+Better Packing's four native replacements default on and are switched together by **Preferences > Better Packing > Disable default Q-SYS control overrides**. The table reflects that shared draft immediately, keeping the original action's keys. Separately registered Packing operations remain distinct and unbound by default. The table reports user remapping and the selected provider, with native defaults/documentation retained in details.
 
-Install the matching Core/Packing/Shortcuts 0.1.1 test builds together. The signed catalog's minimum-Core policy must be updated before public release. New Designer acceptance, including first-run review, bulk overwrite and source refresh, belongs to the owner; no Designer/native-driver run is claimed for this update.
+**Review mod controls…** is shown only when a ready mod has other reviewable proposals. It opens the same shared draft for first-run choices and bulk overwrite. Better Packing does not appear in this checklist. With only Packing's grouped replacements, the general Mod Controls page and menu are hidden.
+
+Install the matching Core/Packing/Shortcuts 0.1.2 test builds together. The signed catalog's minimum-Core policy must be updated before public release. New Designer acceptance, including the all-or-none Packing preference and source refresh, belongs to the owner; no Designer/native-driver run is claimed for this update.

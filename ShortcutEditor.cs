@@ -285,8 +285,11 @@ internal static class ShortcutEditor
             draft = new(shared.Value.Bindings.Overrides); draftEditors = new(shared.Value.Bindings.EditorOverrides ?? new());
             Refresh();
         }
-        var review = new Button { Content = "Review mod controls…", Padding = new Thickness(10, 5, 10, 5) };
-        review.Click += (_, _) => Preferences.SelectPage(panel, "mod-controls"); buttons.Children.Add(review);
+        if (ModControls.HasReviewControls)
+        {
+            var review = new Button { Content = "Review mod controls…", Padding = new Thickness(10, 5, 10, 5) };
+            review.Click += (_, _) => Preferences.SelectPage(panel, "mod-controls"); buttons.Children.Add(review);
+        }
         panel.Loaded += (_, _) => { shared.Changed -= SharedChanged; shared.Changed += SharedChanged; ModControls.Changed -= SharedChanged; ModControls.Changed += SharedChanged; SharedChanged(); };
         panel.Unloaded += (_, _) => { shared.Changed -= SharedChanged; ModControls.Changed -= SharedChanged; };
         Refresh();
