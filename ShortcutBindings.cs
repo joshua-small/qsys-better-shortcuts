@@ -33,14 +33,16 @@ internal sealed class ShortcutBindings : IDisposable
             throw new ArgumentException("Use Ctrl, Alt, or a function key so ordinary typing remains available.");
         return gesture;
     }
-    internal static string Format(KeyGesture? gesture) => gesture is null ? "" : new KeyGestureConverter().ConvertToInvariantString(gesture)!;
+    internal static string Format(KeyGesture? gesture) => GestureFormatting.Serialize(gesture);
     private IEnumerable<KeyGesture> Effective(RegisteredCommand command, Dictionary<string, string> overrides)
     {
         if (overrides.TryGetValue(command.Definition.Id, out var text)) return Parse(text) is { } gesture ? new[] { gesture } : Array.Empty<KeyGesture>();
         if (command.Definition.Native is { } native) return originals.TryGetValue(native, out var saved) ? saved.OfType<KeyGesture>() : native.InputGestures.OfType<KeyGesture>();
         return command.Definition.DefaultGesture is { } value ? new[] { value } : Array.Empty<KeyGesture>();
     }
-    internal string Display(string id, Dictionary<string, string> overrides) => string.Join("; ", Effective(Commands.All.Single(c => c.Definition.Id == id), overrides).Select(Format).Distinct());
+    internal string Display(string id, Dictionary<string, string> overrides) => GestureFormatting.Join(Effective(Commands.All.Single(c => c.Definition.Id == id), overrides));
+    internal string Input(string id, Dictionary<string, string> overrides) =>
+        Format(Effective(Commands.All.Single(c => c.Definition.Id == id), overrides).FirstOrDefault());
     internal CommandSnapshot[] Snapshot(Dictionary<string, string> overrides) => Commands.All.Select(c => new CommandSnapshot(
         c.Definition.Id, c.Definition.Name, c.Definition.Native is null ? c.Definition.Group : "Q-SYS",
         Display(c.Definition.Id, overrides), Display(c.Definition.Id, new()), Context(c),

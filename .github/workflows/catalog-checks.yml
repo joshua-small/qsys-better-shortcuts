@@ -14,3 +14,11 @@ jobs:
         with:
           global-json-file: global.json
       - run: dotnet run --project tests/Catalog --configuration Release --artifacts-path artifacts/catalog
+  gestures:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - run: dotnet run --project tests/Gestures --configuration Release --artifacts-path artifacts/gestures
