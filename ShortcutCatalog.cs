@@ -39,7 +39,7 @@ internal static class ShortcutCatalog
         new("intersect", "Objects", "Select intersecting objects", "Drag selection right to left", "Selecting on the canvas"),
         new("encompass", "Objects", "Select fully enclosed objects", "Drag selection left to right", "Selecting on the canvas"),
         new("alt-intersect", "Objects", "Select intersecting objects (alternate)", "Alt+drag selection left to right", "Selecting on the canvas"),
-        new("pins", "Objects", "Select right-side connector pins", "Alt+drag selection right to left", "Selecting component pins", "The Help wording says right-side pins only. Static 10.5 code reverses the box-selection mode and considers canvas elements and children; verify the pin-only claim during physical testing."),
+        new("pins", "Objects", "Select only connector pins", "Alt+drag selection right to left", "Selecting component pins", "Owner confirmed on October 14, 2026: selects connector pins inside the selection box on either side. This corrects the Help table's right-side-only wording."),
         new("multi-wire", "Objects", "Connect multiple wires", "Select pins, then drag one selected pin", "Compatible pins on the target component", "Mixed signal types are allowed when the target has matching pins."),
         new("multi-name", "Objects", "Create multiple output Signal Names", "Select output pins; type a name; Enter", "Multiple output pins selected", "Designer appends sequential numbers to the base name."),
         new("paste-names", "Objects", "Connect output Signal Names to inputs", "Ctrl+C, then Ctrl+V", "Output Signal Names, then an equal number of input pins", "Copy the selected output Signal Names, select the destination input pins, then paste."),
