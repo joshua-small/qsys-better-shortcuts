@@ -48,6 +48,8 @@ Extracted from Schematic Tools commit `13c52e6`. [Split tracking](https://github
 
 On the same date, the owner confirmed recorder capture and conflict handling worked in Designer. With Core/Shortcuts 0.1.4 and Packing 0.1.3 installed, subsequent checks verified the saved Preferences shortcut displays **Ctrl+,**, both Tools hints display their current defaults, all four Sidebars entries display the expected keys, and the View menu exposes Toggle Dark Mode. Clicking Toggle All Sidebars and Toggle Dark Mode changed the UI; their displayed shortcuts restored the initial layout/theme. Core's 124 WPF checks cover hint remapping, clearing, resetting, native click preservation and punctuation. This remains scoped acceptance, not completion of every editor/context case.
 
+Additional [Designer acceptance checks](docs/DESIGNER-VALIDATION-10.5.md) verified the three individual sidebar shortcuts, Script Programmer Mode and Component Controls Info with both their mod defaults and temporary saved remaps. The corresponding View/Tools hints displayed the remapped keys. Original preferences were restored exactly. Remaps were loaded after restart because the automation helper deactivated Preferences during typing; this is distinct from an end-to-end live recorder/save test. The owner's recorder/conflict confirmation remains separate evidence.
+
 ## Shared controls (0.1.4)
 
 Core is now the sole binding engine and settings authority. This module is a presentation adapter; it does not install a second set of bindings. Old Overrides and EditorOverrides migrate without losing alternatives, absent-mod keys or explicit editor takeover consent. Core retains those native overrides when Better Shortcuts is absent.
