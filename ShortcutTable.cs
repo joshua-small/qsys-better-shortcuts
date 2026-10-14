@@ -21,7 +21,7 @@ internal static class ShortcutTable
         new("internal/canvas-wheel", "Zoom canvas with mouse wheel", "Ctrl+mouse wheel", "Canvas zoom handler; Shift not held",
             "Q-SYS internals (reference)", "Designer 10.5 GraphicCanvas.Zoom. Static code evidence; physical delivery still needs testing. Also mentioned in the 10.4 release-note popup-zoom fix. Not remappable here.", null, null, "Additional native gestures"),
         new("internal/application-wheel", "Zoom application with mouse wheel", "Ctrl+Shift+mouse wheel", "Designer receives an unhandled wheel event",
-            "Q-SYS internals (reference)", "Designer 10.5 MainWindow_MouseWheel changes the application scale. Not found in the reviewed Help pages or targeted Help search. Static code evidence; physical delivery still needs testing. Not remappable here.", null, null, "Additional native gestures")
+            "Q-SYS internals (reference)", "Designer 10.5 MainWindow_MouseWheel changes the application scale. Owner confirmed application zoom in and out with this gesture on October 14, 2026. Not found in the reviewed Help pages or targeted Help search. Not remappable here.", null, null, "Additional native gestures")
     ];
     internal static ShortcutRow[] Build(IEnumerable<CommandSnapshot> commands, IReadOnlyDictionary<string, string> overrides)
     {

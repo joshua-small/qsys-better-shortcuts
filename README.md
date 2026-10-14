@@ -6,7 +6,7 @@ Search by command, keybinding, context, or source. Select a row to see its instr
 
 For an assignable command, enter one gesture and choose Assign, Clear, or Reset. The table immediately shows the staged keybinding and **User** source. Clear disables the binding; Reset restores its provider default. OK applies changes; Cancel discards them. Conflicting assignments, including conflicting resets, are rejected before changing the draft. When summarizes context in plain language; Designer and each mod still decide whether a command is available. No global keyboard hook is installed.
 
-See the [10.5 documentation/code comparison](docs/SHORTCUT-AUDIT-10.5.md) for table omissions, physical-key ambiguities, the possible Alt-selection wording mismatch, and the exact static evidence scope. [Issue #2](https://github.com/joshua-small/qsys-better-shortcuts/issues/2) tracks application and physical-key acceptance; the new table has not yet passed that phase.
+See the [10.5 documentation/code comparison](docs/SHORTCUT-AUDIT-10.5.md) for table omissions, physical-key ambiguities, and the owner-confirmed correction **Select only connector pins** for Alt + right-to-left selection. The owner also confirmed application zoom with Ctrl+Shift+mouse wheel. [Issue #2](https://github.com/joshua-small/qsys-better-shortcuts/issues/2) tracks the remaining application and physical-key acceptance; the new table itself has not yet passed that phase.
 
 Defaults:
 
