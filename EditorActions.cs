@@ -30,6 +30,7 @@ internal static class EditorActions
         var info = Commands.Native("NamedComponentInfo");
         Add("component-controls", "View Component Controls", Key.I, () => info.Execute(null, window), () => info.CanExecute(null, window));
         Add("programmer-mode", "Script Programmer Mode", Key.P, () => programmer.SetValue(appInfo, !(bool)programmer.GetValue(appInfo)!), () => programmerMenu.IsEnabled);
+        ShortcutMenus.Install(window, programmerMenu, info);
         var design = Host.Field(document, "_DesignElements");
         var expanded = (DependencyProperty)Host.Type("QSC.QSys.windows.AccordionPanel").GetField("IsExpandedProperty",Host.Static)!.GetValue(null)!;
         foreach (var (id, label, field) in new[] {
