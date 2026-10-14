@@ -2,7 +2,6 @@ using QsysMods.Core;
 
 namespace Designer.Modules.BetterShortcuts;
 
-public sealed record ShortcutSettings(Dictionary<string, string> Overrides);
 public sealed class ShortcutModule : ModModule
 {
     private ShortcutBindings? bindings;
