@@ -66,4 +66,7 @@ var packRow = packingRows.Single(r => r.CommandId == pack.Id);
 Check(packRow.Keybinding == "Ctrl+Alt+L" && packRow.Source.StartsWith("User · Better Packing"), "Show current user keys and effective provider together.");
 Check(packRow.When.Contains("Schematic") && packRow.Details.Contains("awaiting review"), "Replacement scope and provider status must survive official table projection.");
 Check(packRow.Details.Contains("Ctrl+Shift+L"), "Keep native default evidence distinct from effective keys.");
+Check(packingRows.Count(r => r.Command == "Pack Left") == 1, "A canonical Pack action must have exactly one table row.");
+var nativePackingRows = ShortcutTable.Build([pack with { Source = "Q-SYS", Keybinding = "Ctrl+Shift+L", OverrideContext = false }], new Dictionary<string, string>());
+Check(nativePackingRows.Single(r => r.Command == "Pack Left") is { Keybinding: "Ctrl+Shift+L", Source: "Q-SYS" }, "Turning off replacement must retain the keys and show native source.");
 Console.WriteLine($"Passed {checks} total catalog, projection and presentation checks including shared providers.");
