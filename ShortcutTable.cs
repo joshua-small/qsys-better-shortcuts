@@ -3,7 +3,8 @@ namespace Designer.Modules.BetterShortcuts;
 // This projection is independent of WPF so coverage, matching and staged display
 // can be verified without starting Designer or altering the command registry.
 internal sealed record CommandSnapshot(string Id, string Name, string Source, string Keybinding,
-    string DefaultKeybinding, string When, string? NativeOwner = null, string? NativeName = null);
+    string DefaultKeybinding, string When, string? NativeOwner = null, string? NativeName = null,
+    string ProviderDetails = "", bool OverrideContext = false);
 
 internal sealed record ShortcutRow(string Id, string Command, string Keybinding, string When,
     string Source, string Details, string? CommandId, string? SourceUrl, string Section)
@@ -42,13 +43,13 @@ internal static class ShortcutTable
             string note = command is null
                 ? "Reference only — this gesture or contextual action cannot be reassigned here."
                 : $"Default in this Designer: {Unbound(command.DefaultKeybinding)}. Native availability and focus rules still apply.";
-            rows.Add(new("help/" + reference.Id, reference.Command, keybinding, reference.When, source,
-                $"{reference.Section}. Documented: {reference.Keybinding}. {reference.Details} {note}".Trim(),
+            rows.Add(new("help/" + reference.Id, reference.Command, keybinding, command?.OverrideContext == true ? command.When : reference.When, source,
+                $"{reference.Section}. Documented: {reference.Keybinding}. {reference.Details} {note} {command?.ProviderDetails}".Trim(),
                 command?.Id, reference.SourceUrl, reference.Section));
         }
         foreach (var command in available.Where(c => !matched.Contains(c.Id)))
             rows.Add(new(command.Id, command.Name, BoundText(command, overrides), command.When,
-                Source(command, overrides), $"Default: {Unbound(command.DefaultKeybinding)}. {command.When}",
+                Source(command, overrides), $"Default: {Unbound(command.DefaultKeybinding)}. {command.When} {command.ProviderDetails}",
                 command.Id, null, command.Source));
         return rows.OrderBy(r => r.Command, StringComparer.CurrentCultureIgnoreCase).ThenBy(r => r.When).ToArray();
     }
