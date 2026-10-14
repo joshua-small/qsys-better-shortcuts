@@ -36,13 +36,30 @@ internal sealed class ShortcutBindings : IDisposable
     internal static string Format(KeyGesture? gesture) => GestureFormatting.Serialize(gesture);
     private IEnumerable<KeyGesture> Effective(RegisteredCommand command, Dictionary<string, string> overrides)
     {
-        if (overrides.TryGetValue(command.Definition.Id, out var text)) return Parse(text) is { } gesture ? new[] { gesture } : Array.Empty<KeyGesture>();
+        if (overrides.TryGetValue(command.Definition.Id, out var text)) return GestureFormatting.ParseList(text);
         if (command.Definition.Native is { } native) return originals.TryGetValue(native, out var saved) ? saved.OfType<KeyGesture>() : native.InputGestures.OfType<KeyGesture>();
         return command.Definition.DefaultGesture is { } value ? new[] { value } : Array.Empty<KeyGesture>();
     }
     internal string Display(string id, Dictionary<string, string> overrides) => GestureFormatting.Join(Effective(Commands.All.Single(c => c.Definition.Id == id), overrides));
     internal string Input(string id, Dictionary<string, string> overrides) =>
         Format(Effective(Commands.All.Single(c => c.Definition.Id == id), overrides).FirstOrDefault());
+    internal ShortcutChange Prepare(string id, string? value, Dictionary<string, string> draft, Dictionary<string, string>? editorOverrides = null)
+    {
+        var selected = Commands.All.Single(c => c.Definition.Id == id);
+        var desired = value is null ? Effective(selected, new()).ToArray() : GestureFormatting.ParseList(value);
+        var change = ShortcutChanges.Prepare(draft, id, value, desired, Commands.All.Select(c =>
+            new ShortcutAssignment(c.Definition.Id, c.Definition.Name, Effective(c, draft).ToArray())), editorOverrides);
+        var editorConflicts = OriginalInputs(selected.Definition.Native is null && selected.Definition.AllowInText)
+            .Where(input => desired.Any(g => g.Key == input.Key && g.Modifiers == input.Modifiers)
+            && !Commands.All.Any(c => ReferenceEquals(c.Definition.Native, input.Command) || ReferenceEquals(c.Command, input.Command)))
+            .ToArray();
+        if (editorConflicts.Length > 0)
+            change.EditorOverrides[id] = GestureFormatting.Join(editorConflicts.Select(i => new KeyGesture(i.Key, i.Modifiers)));
+        var editorNames = editorConflicts.Select(input =>
+            (input.Command is RoutedUICommand ui ? ui.Text : input.Command is RoutedCommand routed ? routed.Name : "Editor binding")
+                + " (" + KeybindingPresentation.Text(Format(new KeyGesture(input.Key, input.Modifiers)), false) + ")");
+        return change with { Conflicts = change.Conflicts.Concat(editorNames).Distinct().ToArray() };
+    }
     internal CommandSnapshot[] Snapshot(Dictionary<string, string> overrides) => Commands.All.Select(c => new CommandSnapshot(
         c.Definition.Id, c.Definition.Name, c.Definition.Native is null ? c.Definition.Group : "Q-SYS",
         Display(c.Definition.Id, overrides), Display(c.Definition.Id, new()), Context(c),
@@ -65,7 +82,24 @@ internal sealed class ShortcutBindings : IDisposable
     internal void Validate(ShortcutSettings settings)
     {
         if (settings.Overrides is null || settings.Overrides.Count > 10000) throw new ArgumentException("Invalid shortcut preferences.");
-        foreach (var pair in settings.Overrides) Parse(pair.Value); // Retain bindings for temporarily absent mods.
+        foreach (var pair in settings.Overrides)
+        {
+            var command = Commands.All.FirstOrDefault(c => c.Definition.Id == pair.Key);
+            foreach (var gesture in GestureFormatting.ParseList(pair.Value))
+            {
+                // Conflict transfer can retain a provider's ordinary-key alternative.
+                if (command is not null && Effective(command, new()).Any(g => GestureFormatting.Same(g, gesture))) continue;
+                Parse(Format(gesture)); // Retain bindings for temporarily absent mods.
+            }
+        }
+        if (settings.EditorOverrides?.Count > 10000) throw new ArgumentException("Invalid editor shortcut preferences.");
+        foreach (var pair in settings.EditorOverrides ?? new())
+        {
+            var command = Commands.All.FirstOrDefault(c => c.Definition.Id == pair.Key);
+            foreach (var gesture in GestureFormatting.ParseList(pair.Value))
+                if (command is not null && !Effective(command, settings.Overrides).Any(g => GestureFormatting.Same(g, gesture)))
+                    throw new ArgumentException("An editor overwrite must match an assigned shortcut.");
+        }
         var occupied = new Dictionary<(Key, ModifierKeys), RegisteredCommand>();
         foreach (var command in Commands.All)
             foreach (var gesture in Effective(command, settings.Overrides))
@@ -75,24 +109,19 @@ internal sealed class ShortcutBindings : IDisposable
                 {
                     // Host commands may intentionally share a key in different native contexts.
                     if (other.Definition.Native is not null && command.Definition.Native is not null
-                        && !settings.Overrides.ContainsKey(other.Definition.Id) && !settings.Overrides.ContainsKey(command.Definition.Id)) continue;
+                        && Effective(other, new()).Any(g => GestureFormatting.Same(g, gesture))
+                        && Effective(command, new()).Any(g => GestureFormatting.Same(g, gesture))) continue;
                     throw new ArgumentException(Format(gesture) + " conflicts: " + other.Definition.Name + " / " + command.Definition.Name);
                 }
                 occupied[key] = command;
             }
-        foreach (var element in Elements(window))
-            foreach (var input in element.InputBindings.OfType<KeyBinding>().Where(b => !added.Any(a => ReferenceEquals(a.Binding, b))))
-            {
-                if (!occupied.TryGetValue((input.Key, input.Modifiers), out var desired)) continue;
-                if (ReferenceEquals(input.Command, desired.Definition.Native)) continue;
-                if (Commands.All.Any(c => ReferenceEquals(c.Definition.Native, input.Command) && settings.Overrides.ContainsKey(c.Definition.Id))) continue;
-                if (desired.Definition.Native is not null && !settings.Overrides.ContainsKey(desired.Definition.Id)) continue;
-                throw new ArgumentException(Format(new KeyGesture(input.Key, input.Modifiers)) + " is already used by an editor binding.");
-            }
+        // Explicit editor InputBindings are warned about in Prepare and suppressed
+        // reversibly by Apply. They must not turn a confirmed overwrite into an error.
     }
     internal void Apply(ShortcutSettings settings)
     {
         Validate(settings); Restore(); current = settings;
+        SuppressEditorBindings(Elements(window));
         foreach (var command in Commands.All)
         {
             var def = command.Definition;
@@ -124,9 +153,32 @@ internal sealed class ShortcutBindings : IDisposable
     }
     private void BindFloating(UIElement target)
     {
+        SuppressEditorBindings(Elements(target), floating: true);
         foreach (var command in Commands.All.Where(c => c.Definition.Native is null && c.Definition.AllowInText))
             foreach (var gesture in Effective(command, current.Overrides))
                 if (!target.InputBindings.OfType<KeyBinding>().Any(b => b.Key == gesture.Key && b.Modifiers == gesture.Modifiers)) Add(target, command, gesture);
+    }
+    private IEnumerable<KeyBinding> OriginalInputs(bool includeFloating) => Elements(window)
+        .Concat(includeFloating ? scopes.SelectMany(s => s.TryGetTarget(out var target) ? Elements(target) : []) : [])
+        .Distinct().SelectMany(e => e.InputBindings.OfType<KeyBinding>())
+        .Where(b => !added.Any(a => ReferenceEquals(a.Binding, b)))
+        .Concat(removed.Where(r => includeFloating || Window.GetWindow(r.Owner) == window).Select(r => r.Binding).OfType<KeyBinding>()).Distinct();
+    private void SuppressEditorBindings(IEnumerable<UIElement> elements, bool floating = false)
+    {
+        // Only keys explicitly approved in the conflict prompt may displace an
+        // unregistered editor binding. Retained alternatives get no extra ownership.
+        var claimed = Commands.All.Where(c => current.EditorOverrides?.ContainsKey(c.Definition.Id) == true)
+            .Where(c => !floating || (c.Definition.Native is null && c.Definition.AllowInText))
+            .SelectMany(c => GestureFormatting.ParseList(current.EditorOverrides![c.Definition.Id])
+                .Select(g => (Command: c, Gesture: g))).ToArray();
+        foreach (var element in elements)
+            foreach (var input in element.InputBindings.OfType<KeyBinding>().ToArray())
+            {
+                if (added.Any(a => ReferenceEquals(a.Binding, input))) continue;
+                if (!claimed.Any(c => c.Gesture.Key == input.Key && c.Gesture.Modifiers == input.Modifiers
+                    && !ReferenceEquals(c.Command.Command, input.Command) && !ReferenceEquals(c.Command.Definition.Native, input.Command))) continue;
+                element.InputBindings.Remove(input); removed.Add((element, input));
+            }
     }
     private static IEnumerable<UIElement> Elements(DependencyObject root)
     {

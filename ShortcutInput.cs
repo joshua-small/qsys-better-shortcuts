@@ -6,10 +6,11 @@ internal sealed class ShortcutRecording
 {
     public string Gesture { get; private set; } = "";
     public bool IsRecording { get; private set; }
+    public bool HasCandidate { get; private set; }
     public string Message { get; private set; } = "";
-    public void Set(string gesture) { Gesture = gesture; IsRecording = false; Message = ""; }
-    public void Begin() { IsRecording = true; Message = "Press a shortcut. Escape cancels."; }
-    public void Cancel() { IsRecording = false; Message = "Recording canceled."; }
+    public void Set(string gesture) { Gesture = gesture; IsRecording = false; HasCandidate = false; Message = ""; }
+    public void Begin() { IsRecording = true; HasCandidate = false; Message = "Press a shortcut. Escape cancels."; }
+    public void Cancel() { IsRecording = false; HasCandidate = false; Message = "Recording canceled."; }
     public void Capture(Key key, ModifierKeys modifiers, bool repeat = false)
     {
         if (!IsRecording || repeat) return;
@@ -23,7 +24,7 @@ internal sealed class ShortcutRecording
         try
         {
             Gesture = GestureFormatting.Serialize(new KeyGesture(key, modifiers));
-            IsRecording = false; Message = "Recorded. Choose Assign to stage this shortcut.";
+            IsRecording = false; HasCandidate = true; Message = "Press Enter to accept, or another combination to change it. Escape cancels.";
         }
         catch (ArgumentException) { Message = "That combination cannot be assigned. Try another shortcut."; }
     }

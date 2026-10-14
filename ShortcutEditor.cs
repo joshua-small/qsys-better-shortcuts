@@ -5,6 +5,7 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
+using System.Windows.Input;
 using System.Windows.Media;
 using QsysMods.Core;
 
@@ -15,6 +16,7 @@ internal static class ShortcutEditor
     internal static PreferenceEditor<ShortcutSettings> Create(ShortcutSettings value, ShortcutBindings bindings)
     {
         var draft = new Dictionary<string, string>(value.Overrides);
+        var draftEditors = new Dictionary<string, string>(value.EditorOverrides ?? new());
         var panel = new Grid { Margin = new Thickness(16) };
         // Preferences wraps every page in a ScrollViewer, which otherwise gives
         // the grid unlimited height and lets the table push its editor offscreen.
@@ -117,23 +119,86 @@ internal static class ShortcutEditor
         detailPanel.Children.Add(new ScrollViewer { Content = detail, VerticalScrollBarVisibility = ScrollBarVisibility.Auto }); Place(detailPanel, 3);
         var controls = new DockPanel();
         var buttons = new StackPanel { Orientation = Orientation.Horizontal }; DockPanel.SetDock(buttons, Dock.Right); controls.Children.Add(buttons);
-        var gesture = new ShortcutRecorder { Margin = new Thickness(0, 0, 10, 0) };
-        controls.Children.Add(gesture); Place(controls, 4);
-        var status = new TextBlock { Margin = new Thickness(0, 6, 0, 0), TextWrapping = TextWrapping.Wrap, Text = "Assign, Clear, or Reset a selected command. OK saves; Cancel discards changes." }; Place(status, 5);
+        controls.Children.Add(new TextBlock { Text = "Double-click a command or press Enter to change its shortcut.", VerticalAlignment = VerticalAlignment.Center }); Place(controls, 4);
+        var status = new TextBlock { Margin = new Thickness(0, 6, 0, 0), TextWrapping = TextWrapping.Wrap, Text = "OK saves; Cancel discards changes." }; Place(status, 5);
+        var overlay = new Grid { Name = "ShortcutEditOverlay", Background = new SolidColorBrush(Color.FromArgb(100, 0, 0, 0)), Visibility = Visibility.Collapsed };
+        Grid.SetRowSpan(overlay, panel.RowDefinitions.Count); Panel.SetZIndex(overlay, 10); panel.Children.Add(overlay);
+        KeyboardNavigation.SetTabNavigation(overlay, KeyboardNavigationMode.Cycle);
+        var card = new Border { Padding = new Thickness(20), Margin = new Thickness(20), MaxWidth = 620,
+            HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, BorderThickness = new Thickness(1) };
+        card.SetResourceReference(Border.BackgroundProperty, background);
+        card.SetResourceReference(Border.BorderBrushProperty, foreground);
+        var editing = new StackPanel(); card.Child = editing; overlay.Children.Add(card);
+        var title = new TextBlock { FontSize = 16, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap };
+        var gesture = new ShortcutRecorder();
+        var warning = new TextBlock { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 10) };
+        AutomationProperties.SetLiveSetting(warning, AutomationLiveSetting.Polite);
+        editing.Children.Add(title); editing.Children.Add(gesture);
+        editing.Children.Add(new ScrollViewer { Content = warning, MaxHeight = 180, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
+        var editButtons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+        var accept = new Button { Name = "ShortcutAccept", Content = "Accept", Padding = new Thickness(12, 5, 12, 5), Margin = new Thickness(0, 0, 8, 0) };
+        var cancel = new Button { Content = "Cancel", Padding = new Thickness(12, 5, 12, 5) };
+        editButtons.Children.Add(accept); editButtons.Children.Add(cancel); editing.Children.Add(editButtons);
+        ShortcutRow? editingRow = null;
+        ShortcutChange? pendingChange = null;
+        void CloseEdit()
+        {
+            editingRow = null; pendingChange = null; gesture.Finish();
+            overlay.Visibility = Visibility.Collapsed;
+            table.IsEnabled = search.IsEnabled = controls.IsEnabled = true;
+            table.Focus();
+        }
+        void ShowChange(ShortcutChange? change)
+        {
+            pendingChange = change; accept.IsEnabled = change is not null;
+            var conflicts = change?.Conflicts ?? [];
+            accept.Content = conflicts.Length > 0 ? "Overwrite" : "Accept";
+            warning.Text = conflicts.Length == 0 ? "Enter accepts. Escape cancels. Preferences OK saves your changes."
+                : "Already used by:\n" + string.Join("\n", conflicts.Select(c => "• " + c))
+                    + "\n\nOverwrite moves the matching shortcuts to this command. Other shortcuts stay assigned. Enter overwrites; Escape cancels.";
+        }
+        void CommitEdit()
+        {
+            if (pendingChange is null || editingRow is null) return;
+            try
+            {
+                bindings.Validate(new(pendingChange.Overrides, pendingChange.EditorOverrides));
+                draft = pendingChange.Overrides;
+                draftEditors = pendingChange.EditorOverrides;
+                var selectedId = editingRow.Id; CloseEdit(); Refresh(selectedId);
+                status.Text = "Staged. Choose OK to save, or Cancel to discard.";
+            }
+            catch (Exception ex) { warning.Text = status.Text = ex.Message; }
+        }
+        void Edit(ShortcutRow selected, bool reset = false)
+        {
+            if (!selected.CanAssign || selected.CommandId is not { } id) return;
+            editingRow = selected;
+            title.Text = (reset ? "Restore default shortcuts: " : "Change shortcut: ") + selected.Command;
+            gesture.Visibility = reset ? Visibility.Collapsed : Visibility.Visible;
+            ShowChange(reset ? bindings.Prepare(id, null, draft, draftEditors) : null);
+            if (reset && pendingChange!.Conflicts.Length == 0) { CommitEdit(); return; }
+            table.IsEnabled = search.IsEnabled = controls.IsEnabled = false;
+            overlay.Visibility = Visibility.Visible;
+            if (reset) accept.Focus();
+            else { gesture.SetGesture(bindings.Input(id, draft)); gesture.Begin(); }
+        }
         var actions = new List<Button>();
         void Select()
         {
             var selected = table.SelectedItem as ShortcutRow;
-            gesture.IsEnabled = selected?.CanAssign == true;
-            foreach (var action in actions) action.IsEnabled = gesture.IsEnabled;
-            gesture.SetGesture(selected?.CommandId is { } id ? bindings.Input(id, draft) : "");
+            foreach (var action in actions) action.IsEnabled = selected?.CanAssign == true;
             detail.Text = selected?.Details ?? "Select a row for details. Reference rows describe mouse gestures or editor actions that cannot be reassigned here.";
             help.Visibility = selected?.SourceUrl is null ? Visibility.Collapsed : Visibility.Visible;
         }
         void Refresh(string? selectedId = null)
         {
             selectedId ??= (table.SelectedItem as ShortcutRow)?.Id;
-            var rows = ShortcutTable.Build(bindings.Snapshot(draft), draft);
+            var sourceOverrides = new Dictionary<string, string>(draft);
+            var snapshots = bindings.Snapshot(draft);
+            foreach (var entry in snapshots.Where(entry => draftEditors.ContainsKey(entry.Id)))
+                sourceOverrides.TryAdd(entry.Id, entry.Keybinding);
+            var rows = ShortcutTable.Build(snapshots, sourceOverrides);
             var filtered = rows.Where(row => row.Matches(search.Text)).ToArray();
             table.ItemsSource = filtered;
             table.SelectedItem = filtered.FirstOrDefault(row => row.Id == selectedId);
@@ -149,7 +214,9 @@ internal static class ShortcutEditor
                 try
                 {
                     var candidate = new Dictionary<string, string>(draft);
-                    change(candidate, id); bindings.Validate(new(candidate)); draft = candidate;
+                    change(candidate, id);
+                    var candidateEditors = new Dictionary<string, string>(draftEditors); candidateEditors.Remove(id);
+                    bindings.Validate(new(candidate, candidateEditors)); draft = candidate; draftEditors = candidateEditors;
                     Refresh(selected.Id); status.Text = "Staged. Choose OK to save, or Cancel to discard.";
                 }
                 catch (Exception ex) { status.Text = ex.Message; }
@@ -157,14 +224,41 @@ internal static class ShortcutEditor
             buttons.Children.Add(button); actions.Add(button);
             return button;
         }
-        var assign = Button("Assign", (next, id) =>
-        {
-            if (string.IsNullOrEmpty(gesture.Gesture)) throw new ArgumentException("Record a shortcut first, or choose Clear to remove the binding.");
-            next[id] = ShortcutBindings.Format(ShortcutBindings.Parse(gesture.Gesture));
-        });
         Button("Clear", (next, id) => next[id] = "");
-        Button("Reset", (next, id) => next.Remove(id));
-        gesture.Changed += () => assign.IsEnabled = gesture.IsEnabled && !gesture.IsRecording && gesture.Gesture.Length > 0;
+        foreach (var label in new[] { "Change shortcut", "Reset" })
+        {
+            var button = new Button { Content = label, Margin = new Thickness(0, 0, 8, 0), Padding = new Thickness(10, 5, 10, 5) };
+            button.Click += (_, _) => { if (table.SelectedItem is ShortcutRow selected) Edit(selected, label == "Reset"); };
+            buttons.Children.Add(button); actions.Add(button);
+        }
+        table.MouseDoubleClick += (_, e) =>
+        {
+            if (e.ChangedButton != MouseButton.Left || e.OriginalSource is not DependencyObject source
+                || ItemsControl.ContainerFromElement(table, source) is not DataGridRow { Item: ShortcutRow selected }) return;
+            e.Handled = true; Edit(selected);
+        };
+        table.PreviewKeyDown += (_, e) =>
+        {
+            if (e.Key != Key.Enter || Keyboard.Modifiers != ModifierKeys.None || e.IsRepeat) return;
+            e.Handled = true; if (table.SelectedItem is ShortcutRow selected) Edit(selected);
+        };
+        gesture.Changed += () =>
+        {
+            if (overlay.Visibility != Visibility.Visible || editingRow?.CommandId is not { } id || gesture.Visibility != Visibility.Visible) return;
+            try { ShowChange(gesture.HasCandidate ? bindings.Prepare(id, gesture.Gesture, draft, draftEditors) : null); }
+            catch (Exception ex) { ShowChange(null); warning.Text = ex.Message; }
+        };
+        gesture.Confirmed += CommitEdit;
+        gesture.Canceled += CloseEdit;
+        accept.Click += (_, _) => CommitEdit();
+        cancel.Click += (_, _) => CloseEdit();
+        overlay.PreviewKeyDown += (_, e) =>
+        {
+            if (e.Key == Key.Escape && Keyboard.Modifiers == ModifierKeys.None) { e.Handled = true; CloseEdit(); }
+        };
+        overlay.MouseDown += (_, e) => { if (ReferenceEquals(e.OriginalSource, overlay)) CloseEdit(); };
+        overlay.LostKeyboardFocus += (_, _) => overlay.Dispatcher.BeginInvoke(new Action(() =>
+        { if (overlay.Visibility == Visibility.Visible && !overlay.IsKeyboardFocusWithin) CloseEdit(); }));
         search.TextChanged += (_, _) => Refresh();
         table.SelectionChanged += (_, _) => Select();
         help.Click += (_, _) =>
@@ -184,7 +278,7 @@ internal static class ShortcutEditor
             }
         };
         Refresh();
-        return new(panel, () => new(draft));
+        return new(panel, () => new(draft, draftEditors));
     }
     private sealed class ViewportHeightConverter : IValueConverter
     {

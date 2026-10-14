@@ -10,4 +10,9 @@ internal static class GestureFormatting
         new KeyGestureConverter().ConvertToInvariantString(new KeyGesture(gesture.Key, gesture.Modifiers))!;
     internal static string Join(IEnumerable<KeyGesture> gestures) => string.Join("; ", gestures
         .DistinctBy(g => (g.Key, g.Modifiers)).Select(Serialize));
+    internal static KeyGesture[] ParseList(string text) => string.IsNullOrWhiteSpace(text) ? [] : text.Split(';')
+        .Select(part => new KeyGestureConverter().ConvertFromInvariantString(part.Trim()) as KeyGesture
+            ?? throw new ArgumentException("Invalid shortcut."))
+        .DistinctBy(g => (g.Key, g.Modifiers)).ToArray();
+    internal static bool Same(KeyGesture left, KeyGesture right) => left.Key == right.Key && left.Modifiers == right.Modifiers;
 }
