@@ -42,6 +42,8 @@ internal static class ShortcutEditor
             RowHeaderWidth = 0, MinHeight = 120, EnableRowVirtualization = true, AlternationCount = 2
         };
         AutomationProperties.SetName(table, "Keyboard shortcuts");
+        ScrollViewer.SetVerticalScrollBarVisibility(table, ScrollBarVisibility.Auto);
+        ShortcutScrolling.Attach(table);
         // Use Designer's changing light/dark resources rather than fixed colors.
         object Resource(string name) => Host.Type("ActiproSoftware.Windows.Themes.AssetResourceKeys").GetProperty(name, Host.Static)!.GetValue(null)!;
         var background = Resource("WindowTitleBarExtensionBackgroundActiveBrushKey");
@@ -115,8 +117,8 @@ internal static class ShortcutEditor
         detailPanel.Children.Add(new ScrollViewer { Content = detail, VerticalScrollBarVisibility = ScrollBarVisibility.Auto }); Place(detailPanel, 3);
         var controls = new DockPanel();
         var buttons = new StackPanel { Orientation = Orientation.Horizontal }; DockPanel.SetDock(buttons, Dock.Right); controls.Children.Add(buttons);
-        var gesture = new TextBox { Name = "ShortcutGesture", Margin = new Thickness(0, 0, 10, 0), Padding = new Thickness(6), ToolTip = "Enter a shortcut, for example Ctrl+Alt+D" };
-        AutomationProperties.SetName(gesture, "Shortcut to assign"); controls.Children.Add(gesture); Place(controls, 4);
+        var gesture = new ShortcutRecorder { Margin = new Thickness(0, 0, 10, 0) };
+        controls.Children.Add(gesture); Place(controls, 4);
         var status = new TextBlock { Margin = new Thickness(0, 6, 0, 0), TextWrapping = TextWrapping.Wrap, Text = "Assign, Clear, or Reset a selected command. OK saves; Cancel discards changes." }; Place(status, 5);
         var actions = new List<Button>();
         void Select()
@@ -124,7 +126,7 @@ internal static class ShortcutEditor
             var selected = table.SelectedItem as ShortcutRow;
             gesture.IsEnabled = selected?.CanAssign == true;
             foreach (var action in actions) action.IsEnabled = gesture.IsEnabled;
-            gesture.Text = selected?.CommandId is { } id ? bindings.Input(id, draft) : "";
+            gesture.SetGesture(selected?.CommandId is { } id ? bindings.Input(id, draft) : "");
             detail.Text = selected?.Details ?? "Select a row for details. Reference rows describe mouse gestures or editor actions that cannot be reassigned here.";
             help.Visibility = selected?.SourceUrl is null ? Visibility.Collapsed : Visibility.Visible;
         }
@@ -138,7 +140,7 @@ internal static class ShortcutEditor
             count.Text = filtered.Length == 0 ? "No matching shortcuts" : $"{filtered.Length} of {rows.Length}";
             Select();
         }
-        void Button(string label, Action<Dictionary<string, string>, string> change)
+        Button Button(string label, Action<Dictionary<string, string>, string> change)
         {
             var button = new Button { Content = label, Margin = new Thickness(0, 0, 8, 0), Padding = new Thickness(10, 5, 10, 5) };
             button.Click += (_, _) =>
@@ -153,10 +155,16 @@ internal static class ShortcutEditor
                 catch (Exception ex) { status.Text = ex.Message; }
             };
             buttons.Children.Add(button); actions.Add(button);
+            return button;
         }
-        Button("Assign", (next, id) => next[id] = ShortcutBindings.Format(ShortcutBindings.Parse(gesture.Text)));
+        var assign = Button("Assign", (next, id) =>
+        {
+            if (string.IsNullOrEmpty(gesture.Gesture)) throw new ArgumentException("Record a shortcut first, or choose Clear to remove the binding.");
+            next[id] = ShortcutBindings.Format(ShortcutBindings.Parse(gesture.Gesture));
+        });
         Button("Clear", (next, id) => next[id] = "");
         Button("Reset", (next, id) => next.Remove(id));
+        gesture.Changed += () => assign.IsEnabled = gesture.IsEnabled && !gesture.IsRecording && gesture.Gesture.Length > 0;
         search.TextChanged += (_, _) => Refresh();
         table.SelectionChanged += (_, _) => Select();
         help.Click += (_, _) =>

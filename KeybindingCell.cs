@@ -35,14 +35,20 @@ internal sealed class KeybindingCell : StackPanel
                     Padding = new Thickness(5, 1, 5, 1), Margin = new Thickness(0, 1, 0, 1),
                     Child = new TextBlock { Text = part.Text, FontSize = 11, VerticalAlignment = VerticalAlignment.Center }
                 };
-                keycap.SetBinding(Border.BackgroundProperty, TableBrush("keycap"));
-                keycap.SetBinding(Border.BorderBrushProperty, TableBrush("border"));
+                keycap.SetBinding(Border.BackgroundProperty, InheritedBrush("keycap"));
+                keycap.SetBinding(Border.BorderBrushProperty, InheritedBrush("border"));
                 tokens.Children.Add(keycap);
             }
             Children.Add(tokens);
         }
     }
     private static TextBlock Label(string text) => new() { Text = text, VerticalAlignment = VerticalAlignment.Center };
+    private static Binding InheritedBrush(string kind) => new()
+    {
+        Path = new PropertyPath("(0)", System.Windows.Documents.TextElement.ForegroundProperty),
+        RelativeSource = new RelativeSource(RelativeSourceMode.Self),
+        Converter = new ShortcutBrushConverter(), ConverterParameter = kind
+    };
     internal static Binding TableBrush(string kind) => new(nameof(Control.Foreground))
     {
         RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(DataGrid), 1),
