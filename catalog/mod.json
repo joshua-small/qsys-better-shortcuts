@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "id": "better-shortcuts",
+  "name": "Better Shortcuts",
+  "description": "Customize shortcuts for mod commands and native Designer commands, including dark mode, sidebars, programmer mode, and component controls.",
+  "author": "joshua-small",
+  "helpUrl": "https://github.com/joshua-small/qsys-better-shortcuts",
+  "thumbnail": "catalog/artwork/avitex.ico"
+}
