@@ -40,7 +40,26 @@ internal sealed class ShortcutBindings : IDisposable
         if (command.Definition.Native is { } native) return originals.TryGetValue(native, out var saved) ? saved.OfType<KeyGesture>() : native.InputGestures.OfType<KeyGesture>();
         return command.Definition.DefaultGesture is { } value ? new[] { value } : Array.Empty<KeyGesture>();
     }
-    internal string Display(string id, Dictionary<string, string> overrides) => string.Join("; ", Effective(Commands.All.Single(c => c.Definition.Id == id), overrides).Select(Format));
+    internal string Display(string id, Dictionary<string, string> overrides) => string.Join("; ", Effective(Commands.All.Single(c => c.Definition.Id == id), overrides).Select(Format).Distinct());
+    internal CommandSnapshot[] Snapshot(Dictionary<string, string> overrides) => Commands.All.Select(c => new CommandSnapshot(
+        c.Definition.Id, c.Definition.Name, c.Definition.Native is null ? c.Definition.Group : "Q-SYS",
+        Display(c.Definition.Id, overrides), Display(c.Definition.Id, new()), Context(c),
+        c.Definition.Native?.OwnerType.FullName, c.Definition.Native?.Name)).ToArray();
+    private static string Context(RegisteredCommand command) => command.Definition.Id switch
+    {
+        "better-shortcuts/design-elements" => "Design Elements panel is open",
+        "better-shortcuts/properties" => "Properties panel is open",
+        "better-shortcuts/schematic-elements" => "Schematic Elements panel is open",
+        "better-shortcuts/all-sidebars" => "At least one sidebar is docked or auto-hidden",
+        "better-shortcuts/focus-schematic-search" => "Schematic Elements panel is open; search field available",
+        var id when id.StartsWith("better-shortcuts/focus-", StringComparison.Ordinal) => "Design Elements panel is open",
+        "better-shortcuts/dark-mode" => "Designer; native theme command available",
+        "better-shortcuts/component-controls" => "Native Component Controls command available",
+        "better-shortcuts/programmer-mode" => "Script Programmer Mode menu is enabled",
+        "better-shortcuts/preferences" => "Designer",
+        _ => command.Definition.Native is not null ? "Designer decides availability in the focused editor"
+            : "Provided by " + command.Definition.Group + "; command must be available"
+    };
     internal void Validate(ShortcutSettings settings)
     {
         if (settings.Overrides is null || settings.Overrides.Count > 10000) throw new ArgumentException("Invalid shortcut preferences.");
