@@ -64,7 +64,10 @@ internal static class EditorActions
     { yield return root; for(int i=0;i<VisualTreeHelper.GetChildrenCount(root);i++) foreach(var child in Visual(VisualTreeHelper.GetChild(root,i))) yield return child; }
     internal static object Target(object panel) => panel is FrameworkElement { Parent: { } parent } && parent.GetType().FullName == "ActiproSoftware.Windows.Controls.Docking.ToolWindowContainer" ? parent : panel;
     private static void Toggle(object panel) => Host.Call(Target(panel), Host.Property(panel, "State").ToString() == "AutoHide" ? "Dock" : "AutoHide");
-    private static IEnumerable<object> SidebarPanels(IEnumerable<object> panels) => panels.Where(p => Host.Property(p, "IsOpen") is true && Host.Property(p, "State").ToString() is "Docked" or "AutoHide");
+    // A tool window inside a floating DockHost still reports State=Docked.
+    // State alone therefore includes floating panels in spatial/all-dock actions.
+    private static IEnumerable<object> SidebarPanels(IEnumerable<object> panels) => panels.Where(p => Host.Property(p, "IsOpen") is true
+        && Host.Property(p, "IsFloating") is false && Host.Property(p, "State").ToString() is "Docked" or "AutoHide");
     internal static void ToggleAll(IEnumerable<object> panels)
     {
         var sidebars = SidebarPanels(panels).ToArray();

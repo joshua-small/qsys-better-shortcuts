@@ -239,7 +239,8 @@ internal static class ShortcutEditor
             try
             {
                 var commands = Commands.All.Where(c => Commands.IsAvailable(c) &&
-                    (c.Definition.DefaultBinding is not null || Commands.DefaultFor(c.Definition.Id) is not null)).ToArray();
+                    (c.Definition.DefaultBinding is not null || Commands.DefaultFor(c.Definition.Id) is not null
+                        || (c.Definition.Native is null && c.Definition.DefaultGesture is not null))).ToArray();
                 var requests = commands.ToDictionary(c => c.Definition.Id, c => (string?)ModControls.Bindings.DefaultDisplay(c.Definition.Id));
                 var change = ModControls.Bindings.Prepare(requests, draft, draftEditors);
                 reviewingDefaults = true; editingRow = null;
