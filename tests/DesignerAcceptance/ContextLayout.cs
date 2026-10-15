@@ -202,6 +202,11 @@ public sealed partial class Probe
         Stroke(component,Keys.F18); Stroke(component,Keys.F17); Stroke(component,Keys.G);
         Stroke(component,Keys.F19); Stroke(component,Keys.F20); Stroke(component,Keys.G);
         Check(Runs("single")==ordinary && Runs("opt-single")==opt+1 && Runs("opt-chord")==chord+1,"Floating Component Controls permits only its supported opted-in mod routes");
+        Stroke(component,Keys.F20);
+        Check(RoutedKey(component,Keys.Escape,true), "Floating Escape release cancels when key-down never reaches WPF");
+        Check(!Stroke(component,Keys.G) && Runs("opt-chord")==chord+1, "Missing Escape-down regression cannot dispatch its later completion");
+        Stroke(component,Keys.F20); Stroke(component,Keys.G);
+        Check(Runs("opt-chord")==chord+2, "A new floating chord executes once after release cancellation");
         floating.Close(); main.Activate();
         Commands.Native("NamedComponentInfo").Execute(null,main); await Task.Delay(300);
         component=Application.Current.Windows.Cast<Window>().SelectMany(Visual).OfType<FrameworkElement>().First(v=>v.GetType().FullName=="QSC.QSys.windows.ComponentInfo");
