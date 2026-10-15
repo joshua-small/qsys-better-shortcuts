@@ -1,5 +1,7 @@
 # Designer shortcut acceptance — 10.5.0
 
+Physical two-stroke recorder/Preferences-save acceptance is complete for the tested build. The [evidence reconciliation](#physical-recorder-evidence-reconciliation-2026-10-15) distinguishes that owner-assisted test from the separate 92-assertion automated context/layout run and retains the remaining physical-input limits.
+
 ## Historical 0.1.4 build and scope
 
 On 2026-10-14, Core 0.1.4 (beafd5738039dc3a6b641847f22bfd7ccfe2cd57) and Better Shortcuts 0.1.4 (0add5bca3743ed75d59cf2d07ed746f4ad7495ad) were tested in the installed Designer. Better Packing remained 0.1.3. These checks used keyboard input and observed Designer UI; they did not use a live Core.
@@ -84,7 +86,7 @@ Native text-field context menus retained their local Ctrl+C hint while the globa
 
 The original Designer process was preserved. Personal HardLink, HardLinkNames and mod preferences remained byte-identical to their start-of-run hashes. Personal `Prefs.xml` changed during the session; compared with the preserved earlier XML baseline, the only changed entry was `assetRefreshToken`. Only the hash was captured at this run's start, so that comparison does not establish the exact within-run XML delta or its writer. No process-level writer trace was collected in this run, and no token value was published or restored. Native profile-redirection receipts and scoped process paths were checked independently of those personal-file hashes.
 
-At the end of that run, the owner explicitly chose automated recorder coverage and left **physical two-stroke recorder/Preferences save acceptance open**; schematic `tbCodeName` F2 was also pending. The follow-up below resolves those two checks. Physical delivery into floating Component Controls was not reliably attributable through the input helper. Detached Actipro script windows remain outside Core's attached scopes. Swapped dock layouts, alternate keyboard layouts/AltGr and the wider editor/context matrix remain unaccepted. These limits stay tracked in [Core #4](https://github.com/joshua-small/qsys-mods-core/issues/4), [Shortcuts #2](https://github.com/joshua-small/qsys-better-shortcuts/issues/2) and [Shortcuts #4](https://github.com/joshua-small/qsys-better-shortcuts/issues/4). Public catalog dependencies and release work remain separate.
+At the end of that run, physical two-stroke recorder/Preferences save, schematic Code Name F2 and swapped layouts were still pending. The physical retest below resolves recorder/save and positive F2 checks; the separate automated follow-up covers swapped layouts and the later F2 deselection regression. Physical floating-window delivery, alternate keyboard layouts/AltGr and the wider physical editor/context matrix remain unaccepted, and detached Actipro script windows remain unsupported. These residual limits stay tracked in [Core #4](https://github.com/joshua-small/qsys-mods-core/issues/4), [Shortcuts #2](https://github.com/joshua-small/qsys-better-shortcuts/issues/2) and [Shortcuts #4](https://github.com/joshua-small/qsys-better-shortcuts/issues/4).
 
 ## F2, physical recorder and bulk-overwrite retest (2026-10-15 UTC)
 
@@ -103,3 +105,33 @@ The follow-up used the same isolated Designer 10.5.0 copy, with the final review
 The input helper deactivates the Preferences recorder/review overlay when delivering keys or wheel input, so the owner supplied those specific recorder and bulk-apply actions. Saved settings and subsequent menu/dispatch results were independently checked. This does not turn the earlier 84 routed-event assertions into physical-input evidence or expand acceptance to other contexts.
 
 The synthetic test design was saved separately and the isolated Designer closed. Personal mod preferences remained byte-identical to the pre-test copy (SHA-256 `ca14bfb4c4a98ce8d4f6c2ebefa447389da43844bc96515467c1e9f6365c447e`), including the custom Ctrl+, binding. The previously preserved user design also retained its original hash. Raw settings copies, focus receipts and synthetic designs remain local. The broader outstanding contexts above remain open in issue #2.
+
+## Automated context and layout acceptance (2026-10-14)
+
+The next run used a new profile-redirected Designer 10.5.0 copy, merged Core `23336c5` and Shortcuts `21b87a9` plus the fixes described here. Dates in this section use America/Los_Angeles; local receipts carry UTC timestamps. The final `-Contexts` fixture passed **92 native assertions**, with a zero-warning Release build, **181 Core WPF controls checks**, **45 catalog checks** and **41 Shortcuts WPF checks**. This is automated application/routed-event coverage, not physical keyboard or recorder acceptance.
+
+| Context/layout case | Automated result |
+| --- | --- |
+| Root schematic and shared prefixes | Single keys and both completions dispatch once. Held keys/prefixes do not repeat. Escape, invalid completion, click, focus change, unavailable targets, actual ten-second dispatcher timeout and modal Preferences cancel safely. |
+| Native text and docked Monaco | Ordinary mod singles/chord prefixes remain unclaimed. Explicit text opt-ins execute once; native text-field content stays unchanged. |
+| Nested schematic | Both forms dispatch once; changing pages cancels a pending chord; one Undo removes the synthetic container. |
+| Floating Component Controls | Only supported opted-in mod routes dispatch. Closing/reopening the native window does not duplicate execution. |
+| Detached UCI script | Its separate Actipro host remains outside Core's supported routes; even opted-in test keys do not dispatch. This confirms the exclusion, not new detached-window support. |
+| Swapped and mixed docks | Inventory moved right and Properties/Library left. Spatial actions followed actual sides, restored both panels, and all-dock actions collapsed only remaining expanded panels before restoring all. |
+| Sidebar focus | All six Design Elements sections expand, receive focus and stay expanded on repeat. Inspector focuses native `InspectorBorder`; component search focuses native `Spec` TextBox. |
+| Schematic and UCI F2 | Schematic `tbCodeName` selects the complete name and reopens an auto-hidden Properties panel. Empty selection disables F2. UCI `_ControlName` still focuses/selects correctly. |
+| Context-menu hints | A fixture menu on the real canvas, using native Copy and the actual context-opening route, follows live JSON remap, Clear and Reset while open. Command identity is preserved; closing restores original presentation. This does not cover every native icon-menu template. |
+
+The run exposed two defects. Core refreshed hints only when context menus opened, leaving an already-open menu stale after a live settings edit; it now refreshes tracked open menus on apply while retaining original close-time presentation. Shortcuts considered a cached name field eligible after its native parent editor collapsed on deselection; F2 now rejects collapsed editor ancestors without rejecting an auto-hidden Properties dock. Both have regression coverage in the final native run; the Core hint case also has an offline WPF regression that failed before the fix.
+
+The guarded fixture is in [tests/DesignerAcceptance](../tests/DesignerAcceptance/README.md). Test-only commands, startup hooks, raw receipts, vendor binaries and preference copies are excluded from product packages. This automated run left physical recorder/save acceptance open by owner instruction; the evidence reconciliation below separately resolves that item. Physical floating-window delivery, alternate layouts/AltGr, OS-reserved keys and browser-hosted input beyond the tested WPF route remain separate. No release, catalog change or regular Designer installation was performed by this follow-up.
+
+The disposable instance was stopped after the final run. Personal `Prefs.xml`, HardLink, HardLinkNames and mod preferences matched their start-of-run hashes exactly; a same-start XML copy also confirmed no changed preference entries. Raw before/after copies and tested assembly hashes remain local.
+
+## Physical recorder evidence reconciliation (2026-10-15)
+
+Review of the original retest session and preserved receipts is sufficient to close the physical two-stroke recorder/Preferences-save item in [Core #4](https://github.com/joshua-small/qsys-mods-core/issues/4). The owner confirmed completing the requested Actual Size recording (Ctrl+Alt+F12, then G, Enter), bulk review and Preferences OK. The preserved post-save JSON independently contains `Ctrl+Alt+F12 > G`; the session records the immediate View menu hint and helper-driven execution returning zoom from 110% to 100%. Recording/save input came from the owner; subsequent chord execution came through the Windows input helper. These are not the earlier synthetic WPF recorder events.
+
+The same saved JSON confirms Design Elements restored to Shift+Alt+D, Copy retaining its unrelated F24 then G alternative, Preferences retaining Ctrl+, and the Tools defaults Ctrl+Alt+P / Ctrl+I. The native F2 receipt records `tbCodeName` with a 13-character selection. Contemporaneous hash comparisons confirm preservation of personal **mod** preferences and the saved original design. They do not establish unchanged native `Prefs.xml` for that retest or resolve the earlier `assetRefreshToken` attribution.
+
+This accepts the observed path on Designer 10.5.0, Core `3ea01ac` and Shortcuts `21b87a9` (reviewed head `1c0e533`). Source comparison through Core PR #8 and Shortcuts PR #6 confirms the recorder, Preferences-save and chord-dispatch implementations are unchanged; the later product fixes concern open context-menu hints and inactive F2 editors. The later 92-assertion context/layout run remains separate automated evidence. No fresh physical run, separately observed Preferences reopening, application-restart persistence, alternate-layout coverage or physical floating-window delivery is claimed by this reconciliation. Those wider limits remain open; the whole Core issue is not closed.
