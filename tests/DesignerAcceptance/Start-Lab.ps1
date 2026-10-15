@@ -3,9 +3,11 @@ param(
     [Parameter(Mandatory)][string]$BuildDirectory,
     [Parameter(Mandatory)][string]$CoreBuildDirectory,
     [switch]$Fresh,
-    [switch]$Suite
+    [switch]$Suite,
+    [switch]$Contexts
 )
 $ErrorActionPreference = 'Stop'
+if ($Suite -and $Contexts) { throw 'Choose either -Suite or -Contexts, not both.' }
 $lab = (Resolve-Path -LiteralPath $LabDirectory).Path.TrimEnd('\')
 $build = (Resolve-Path -LiteralPath $BuildDirectory).Path
 $coreBuild = (Resolve-Path -LiteralPath $CoreBuildDirectory).Path
@@ -42,6 +44,7 @@ $psi.Environment['DOTNET_TieredCompilation'] = '0'
 $psi.Environment['COMPlus_JitNoInline'] = '1'
 $psi.Environment['TEMP'] = "$lab\profile\Temp"; $psi.Environment['TMP'] = "$lab\profile\Temp"
 $psi.Environment['QSYS_SHORTCUTS_LAB_SUITE'] = $(if ($Suite) { '1' } else { '0' })
+$psi.Environment['QSYS_SHORTCUTS_LAB_CONTEXTS'] = $(if ($Contexts) { '1' } else { '0' })
 $p = [Diagnostics.Process]::Start($psi)
 @{ ProcessId = $p.Id; ApplicationDirectory = $lab } | ConvertTo-Json | Set-Content -LiteralPath "$lab\lab-process.json"
 $p.Id
