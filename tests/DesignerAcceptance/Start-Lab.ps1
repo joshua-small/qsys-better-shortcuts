@@ -6,10 +6,15 @@ param(
     [switch]$Suite,
     [switch]$Contexts,
     [switch]$Physical,
-    [switch]$Editors
+    [switch]$Editors,
+    [switch]$Menus,
+    [switch]$MenuBaseline,
+    [switch]$LegacyEditor
 )
 $ErrorActionPreference = 'Stop'
-if (@($Suite, $Contexts, $Physical, $Editors).Where({ $_ }).Count -gt 1) { throw 'Choose only one of -Suite, -Contexts, -Physical or -Editors.' }
+if (@($Suite, $Contexts, $Physical, $Editors, $Menus).Where({ $_ }).Count -gt 1) { throw 'Choose only one of -Suite, -Contexts, -Physical, -Editors or -Menus.' }
+if ($MenuBaseline -and !$Menus) { throw '-MenuBaseline requires -Menus.' }
+if ($LegacyEditor -and !$Editors) { throw '-LegacyEditor requires -Editors.' }
 $lab = (Resolve-Path -LiteralPath $LabDirectory).Path.TrimEnd('\')
 $build = (Resolve-Path -LiteralPath $BuildDirectory).Path
 $coreBuild = (Resolve-Path -LiteralPath $CoreBuildDirectory).Path
@@ -49,6 +54,9 @@ $psi.Environment['QSYS_SHORTCUTS_LAB_SUITE'] = $(if ($Suite) { '1' } else { '0' 
 $psi.Environment['QSYS_SHORTCUTS_LAB_CONTEXTS'] = $(if ($Contexts) { '1' } else { '0' })
 $psi.Environment['QSYS_SHORTCUTS_LAB_PHYSICAL'] = $(if ($Physical) { '1' } else { '0' })
 $psi.Environment['QSYS_SHORTCUTS_LAB_EDITORS'] = $(if ($Editors) { '1' } else { '0' })
+$psi.Environment['QSYS_SHORTCUTS_LAB_MENUS'] = $(if ($Menus) { '1' } else { '0' })
+$psi.Environment['QSYS_SHORTCUTS_LAB_MENU_BASELINE'] = $(if ($MenuBaseline) { '1' } else { '0' })
+$psi.Environment['QSYS_SHORTCUTS_LAB_LEGACY_EDITOR'] = $(if ($LegacyEditor) { '1' } else { '0' })
 $p = [Diagnostics.Process]::Start($psi)
 @{ ProcessId = $p.Id; ApplicationDirectory = $lab } | ConvertTo-Json | Set-Content -LiteralPath "$lab\lab-process.json"
 $p.Id
