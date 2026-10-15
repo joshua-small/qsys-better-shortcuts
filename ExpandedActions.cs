@@ -117,9 +117,27 @@ internal static class ExpandedActions
         }, () => FocusedSwatch is { } swatch && Call(swatch, "IsSelectionLocked") is false)
         { DefaultBinding = "I", AllowOrdinaryKey = true, ShortcutContext = () => FocusedSwatch is not null && !ControlInput.IsTextInput(), When = "Color swatch focused; selection unlocked; text input excluded" });
     }
-    private static TextBox? NameEditor => EditorActions.Visual((DependencyObject)Host.Field(document, "editorStackControl")).OfType<TextBox>()
-        .FirstOrDefault(t => t.IsEnabled && !t.IsReadOnly && t.Visibility == Visibility.Visible &&
-            (t.Name is "DebugControlName" or "_ControlName" or "tbCodeName" || BindingOperations.GetBindingExpression(t, TextBox.TextProperty)?.ParentBinding.Path?.Path is "CodeName" or "ControlName"));
+    private static TextBox? NameEditor
+    {
+        get
+        {
+            var root = (DependencyObject)Host.Field(document, "editorStackControl");
+            return EditorActions.Visual(root).OfType<TextBox>().FirstOrDefault(t => t.IsEnabled && !t.IsReadOnly && ActiveEditor(t, root) &&
+                (t.Name is "DebugControlName" or "_ControlName" or "tbCodeName" || BindingOperations.GetBindingExpression(t, TextBox.TextProperty)?.ParentBinding.Path?.Path is "CodeName" or "ControlName"));
+        }
+    }
+    private static bool ActiveEditor(DependencyObject field, DependencyObject root)
+    {
+        // Native property editors stay materialized after their selection is
+        // removed. Ignore collapsed editor ancestors, but allow the enclosing
+        // Properties dock to be auto-hidden so F2 can restore it.
+        for (DependencyObject? current = field; current is not null; current = ControlInput.Parent(current))
+        {
+            if (current is UIElement { Visibility: not Visibility.Visible }) return false;
+            if (ReferenceEquals(current, root)) return true;
+        }
+        return false;
+    }
     private static object? FocusedSwatch
     {
         get
