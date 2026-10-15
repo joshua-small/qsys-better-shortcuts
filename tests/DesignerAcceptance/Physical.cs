@@ -45,11 +45,17 @@ public sealed partial class Probe
             {
                 var key = e.Key == Keys.System ? e.SystemKey : e.Key;
                 // Only the documented test strokes, never arbitrary typed content.
-                if (key is Keys.F8 or Keys.F9 or Keys.F10 or Keys.F11 or Keys.G or Keys.Escape)
+                if (key is Keys.F8 or Keys.F9 or Keys.F10 or Keys.F11 or Keys.G or Keys.Escape
+                    || (editorMode && key is Keys.F5 or Keys.F6 or Keys.F7))
                     PhysicalReceipt(e.RoutedEvent.Name, (Window)sender, key: e);
             }
             window.AddHandler(Keyboard.PreviewKeyDownEvent, new KeyEventHandler(Record), true);
             window.AddHandler(Keyboard.PreviewKeyUpEvent, new KeyEventHandler(Record), true);
+            if (editorMode)
+                window.AddHandler(CommandManager.PreviewExecutedEvent, new ExecutedRoutedEventHandler((sender, e) => {
+                    if (e.Command is RoutedCommand command && command.Name is "Connect" or "Emulate" or "Disconnect")
+                        PhysicalReceipt("native-preview-executed", (Window)sender, command.Name);
+                }), true);
             window.Closed += (_, _) => observedWindows.Remove(window);
         }
         File.WriteAllText(Path.Combine(Output, "physical-counts.json"), JsonSerializer.Serialize(new {
