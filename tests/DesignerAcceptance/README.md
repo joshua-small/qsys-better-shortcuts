@@ -18,7 +18,7 @@ The launcher verifies the exact Designer/ModuleCommon hashes and the profile mar
 
 With `-Suite`, the module registers two fixture commands and exercises the actual Preferences page: legacy defaults, conflict disclosure, preserved alternatives, bulk Cancel/Apply/OK, recorder routed events, JSON persistence and menu refresh. It also checks floating/closed panels, UCI subtype creation and undo, and library-category adapters. The suite deliberately changes the disposable layout and creates an unsaved synthetic UCI. It leaves two test remaps for follow-on checks and saves the original lab settings alongside the receipt. These are native component/routed-event checks, not physical keyboard tests.
 
-With none of `-Suite`, `-Contexts`, `-Physical` or `-Editors`, the module only observes the selected document, focus, layer state, panel states (including `IsFloating`), command availability and effective bindings. It does not record typed text or inject input. `shortcut-evidence/state.json` refreshes during manual/Computer Use checks. `result.json` reports `-Suite` success, individual assertions and errors; absence of a result is not a pass. Receipts, settings, designs and vendor binaries stay local and out of Git.
+With none of `-Suite`, `-Contexts`, `-Physical`, `-Editors` or `-Menus`, the module only observes the selected document, focus, layer state, panel states (including `IsFloating`), command availability and effective bindings. It does not record typed text or inject input. `shortcut-evidence/state.json` refreshes during manual/Computer Use checks. `result.json` reports `-Suite` success, individual assertions and errors; absence of a result is not a pass. Receipts, settings, designs and vendor binaries stay local and out of Git.
 
 The scoped physical checks and remaining limits are recorded in [Designer acceptance](../../docs/DESIGNER-VALIDATION-10.5.md). Compare hashes of personal preferences and preserve any original Designer process that was running before testing; a lab marker alone is insufficient evidence of isolation.
 
@@ -55,9 +55,25 @@ The [native Q-SYS shortcuts](https://help.qsys.com/Content/Q-Sys_Designer/Q-Sys_
 
 Only in `-Editors` mode, the passive whitelist adds F5/F6/F7 and logs native `Connect`, `Emulate` and `Disconnect` command entry. Native `Connect` is the routed name of Designer's `Deploy` command, not a class named Connect. A command-entry receipt alone does not prove completion: also observe the native validation message or the expected host-state transition. Preserve receipts before relaunching. This checks the selected docked editor and property field, not every browser surface or unsupported detached script window.
 
+## Legacy editor variation
+
+For the Legacy editor use `-Editors -LegacyEditor -Fresh`. The fixture changes only the redirected `ScriptEditor` preference, waits for native readback, and opens the same synthetic UCI. It focuses the actual Actipro `EditorView` and runs four native routed-event checks for text recognition, ordinary exclusion, explicit opt-in and Escape cancellation. `legacy-routing.json` is their separate pass receipt, explicitly marked `physicalInputTested: false`. This regression requires the Core Legacy text-input guard fix.
+
+Physical input begins **after** the `editor-ready` marker in `physical-events.jsonl`; G/Escape events before that marker belong to the synthetic regression. Do not count those as physical acceptance. `editors-ready.json` remains setup evidence only. Repeat the editing/chord/native function-key procedure above, attributing each external input and preserving the terminal counters.
+
+## Native icon-menu variation
+
+Use `-Menus -Fresh` to prepare three synthetic Gains and three UCI buttons. It leaves the UCI selected; switch to Page 1 for the schematic variant. `menus-ready.json` confirms setup only. The passive observer writes `menus-state.json`, timestamped `menus-history.jsonl` and native `menu-clicks.jsonl`, including command IDs, tooltip content, enabled/visible states and model positions/lock state. No keyboard or mouse events are synthesized by this mode.
+
+Open the native icon popup and preserve its defaults. In the **lab** settings only, map its 28 registered commands to distinct free chords, then Clear and Reset while the popup stays open. Compare hints, command IDs and enabled/visible states after every change; reopen and verify one actual hovered tooltip. Exercise representative Align/Duplicate/Undo on schematic and Pack/page-center/Lock/Unlock on UCI, comparing model receipts. The noncommand Unlock button should retain its native tooltip.
+
+In local emulation, right-click both a control and a component body to exercise the different Copy/Paste/Copy All/Paste All availability. A hint update does not establish that native clipboard execution works. On the tested 10.5.0 build, Copy All leaves Paste All disabled, including with owner mouse input. See the [mod-free clipboard diagnostic](../NativeClipboardRepro/README.md).
+
+Optional `-Menus -MenuBaseline -Fresh` performs a synthetic native CopyControlSet round trip, disposes Core's binding engine, and repeats it. `native-clipboard-result.json` labels that comparison accurately: other mod services remain loaded, so it is not a mod-free run. This option replaces the clipboard. Do not edit live settings after disposing the engine, since settings reapplication can attach routing again. Relaunch normally to resume menu testing. The launcher rejects `-MenuBaseline` without `-Menus`, `-LegacyEditor` without `-Editors`, and all combinations of primary modes before touching the lab.
+
 ## Physical recorder/save acceptance
 
-Use the isolated Designer in observer mode (none of `-Suite`, `-Contexts`, `-Physical` or `-Editors`) and record the Designer version and exact Core/Shortcuts source or assembly hashes. A person must enter the recorder strokes with the keyboard while Preferences retains focus; raising routed events does not establish this path. The current input helper loses recorder focus, so it cannot substitute for that input.
+Use the isolated Designer in observer mode (none of `-Suite`, `-Contexts`, `-Physical`, `-Editors` or `-Menus`) and record the Designer version and exact Core/Shortcuts source or assembly hashes. A person must enter the recorder strokes with the keyboard while Preferences retains focus; raising routed events does not establish this path. The current input helper loses recorder focus, so it cannot substitute for that input.
 
 1. Open Preferences > Better Shortcuts, select Actual Size, and open Change shortcut. Record a conflict-free two-stroke chord, for example Ctrl+Alt+F12, release the keys, then G. Confirm both strokes appear in order. If a conflict is reported, cancel and choose a free chord for this recorder check.
 2. Press Enter to accept the recording. Preferences must stay open with the staged assignment. Click Preferences OK to save.

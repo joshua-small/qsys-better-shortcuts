@@ -10,7 +10,8 @@ using QsysMods.Core;
 namespace Designer.Modules.ShortcutsLab;
 
 // Observer by default; -Suite/-Contexts run native integration checks and
-// -Physical/-Editors prepare human-input fixtures. Use only the redirected acceptance copy.
+// -Physical/-Editors/-Menus prepare input fixtures. Legacy editor mode also runs
+// separately attributed routed-event checks. Use only the redirected acceptance copy.
 public sealed partial class Probe : ModModule
 {
     private DispatcherTimer? timer;
@@ -34,7 +35,8 @@ public sealed partial class Probe : ModModule
             bool contexts = Environment.GetEnvironmentVariable("QSYS_SHORTCUTS_LAB_CONTEXTS") == "1";
             bool physical = Environment.GetEnvironmentVariable("QSYS_SHORTCUTS_LAB_PHYSICAL") == "1";
             editorMode = Environment.GetEnvironmentVariable("QSYS_SHORTCUTS_LAB_EDITORS") == "1";
-            if (contexts) RegisterContextCommands();
+            bool menus = Environment.GetEnvironmentVariable("QSYS_SHORTCUTS_LAB_MENUS") == "1";
+            if (contexts || (editorMode && Environment.GetEnvironmentVariable("QSYS_SHORTCUTS_LAB_LEGACY_EDITOR") == "1")) RegisterContextCommands();
             if (physical || editorMode) RegisterPhysicalCommands();
             if (suite)
             {
@@ -46,10 +48,10 @@ public sealed partial class Probe : ModModule
             timer = new DispatcherTimer(DispatcherPriority.ContextIdle) { Interval = TimeSpan.FromMilliseconds(300) };
             timer.Tick += async (_, _) =>
             {
-                try { Snapshot(main); if (physical || editorMode) ObservePhysicalWindows(); }
+                try { Snapshot(main); if (physical || editorMode) ObservePhysicalWindows(); if (menus) ObserveMenus(main); }
                 catch (Exception ex) { File.WriteAllText(Path.Combine(Output, "observer-error.txt"), ex.ToString()); }
-                if ((suite || contexts || physical || editorMode) && !started && main.IsEnabled && File.Exists(SharedSettings.PathName) && Mods.IsReady("better-shortcuts"))
-                { started = true; await Task.Delay(2500); if (editorMode) await PrepareEditors(main); else if (physical) await PreparePhysical(main); else if (contexts) await ContextLayoutAcceptance(main); else await Acceptance(main); }
+                if ((suite || contexts || physical || editorMode || menus) && !started && main.IsEnabled && File.Exists(SharedSettings.PathName) && Mods.IsReady("better-shortcuts"))
+                { started = true; await Task.Delay(2500); if (menus) await PrepareMenus(main); else if (editorMode) await PrepareEditors(main); else if (physical) await PreparePhysical(main); else if (contexts) await ContextLayoutAcceptance(main); else await Acceptance(main); }
             };
             timer.Start();
         });

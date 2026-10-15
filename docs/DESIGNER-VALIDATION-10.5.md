@@ -1,6 +1,44 @@
 # Designer shortcut acceptance — 10.5.0
 
-Physical two-stroke recorder/Preferences-save, populated floating Component Controls, docked UCI Monaco and native Control Name property-field acceptance are complete for the tested builds. The [editor follow-up](#physical-editor-and-native-function-key-acceptance-2026-10-15) records native F5/F6/F7 preservation and separates helper input from owner-entered chords. The [floating-window results](#floating-component-controls-and-native-icon-toolbar-2026-10-15) include the 95-assertion automated run. Earlier evidence remains below as version-specific history.
+Physical two-stroke recorder/Preferences-save, populated floating Component Controls, docked UCI Monaco and native Control Name property-field acceptance are complete for the tested builds. The latest [native icon menus and Legacy editor follow-up](#native-icon-menus-and-legacy-editor-2026-10-15) adds icon presentation/click coverage and a Core text-input fix; native component Paste All remains blocked by the reproduced host clipboard failure. Both docked editors preserve F5/F6/F7. Earlier evidence remains below as version-specific history.
+
+## Native icon menus and Legacy editor, 2026-10-15
+
+The profile-redirected Designer 10.5.0 lab exercised native menus on Core `e7f085c` / Shortcuts `b2e1ba6`. Legacy testing then found and fixed a Core defect in `8e8817f`: ordinary mod commands could run while the docked Actipro `EditorView` had focus because its `SyntaxEditor` ancestor was not recognized as text input. The corrected shared guard recognizes that editor and derived types without a vendor assembly dependency. It does not attach detached script windows or change saved bindings. Better Shortcuts product source is unchanged.
+
+### Native icon-menu results
+
+The schematic, UCI edit and emulating component/control menus use the same native `QSC.QSys.windows.PopupToolBar` template with context-dependent visibility and availability. Its 29 buttons comprise 28 registered native commands and a noncommand Unlock button. The UCI runtime `PopupTool` is a different surface and is not covered by these editing-menu results.
+
+| Check | Observed result |
+| --- | --- |
+| Schematic and UCI live hints | All 28 command tooltips followed distinct chord remaps, Clear and Reset while the native popup stayed open. Native command IDs and enabled/visible states stayed unchanged. Clear removed only shortcut suffixes; Reset restored the exact originals. Hidden/disabled buttons were checked as properties, not claimed as visible interactions. Unlock retained its native tooltip. |
+| Actual hover | The owner hovered Align Left and confirmed `Horizontal Align Left (Ctrl+Alt+F12 then H)`. The passive open-ToolTip receipt also contains that text. Reopening retained the effective hint. |
+| Schematic clicks | Align Left moved all three Gains to the same X while retaining their Y positions; one native Undo restored them. Duplicate followed native placement behavior, committed three additional Gains, and one Undo restored the original count. |
+| UCI clicks | Native Pack Left stacked three 36×16 buttons vertically with aligned left edges. Horizontal Center in Page set all X positions to 622 on the 1280-wide page. Lock locked all three; the native Unlock button then unlocked only the selected target. |
+| Emulating variants | Right-clicking a Gain control versus its component body produced the native Copy/Paste/Copy All/Paste All availability differences. Both whole-component hints followed live remapping. Copy All was enabled on a component, but Paste All stayed disabled after copying, including when the owner repeated the operation with the mouse. |
+
+The initial UCI fixture placed its three buttons at the same location; the click/packing results above are attributed to those recorded starting positions. The final fixture sets distinct native model positions and commits each operation; the corrected positions were verified in the subsequent baseline run. Synthetic fixture setup is not physical input acceptance.
+
+### Native clipboard blocker
+
+The binding-engine-enabled and binding-engine-disposed comparisons both report the custom clipboard format present but a null native typed read. Other mod services remain loaded in that comparison. A separate STA process using the installed Q-SYS assemblies **without Core, Better Shortcuts or Qmm assemblies** reproduces the failure on .NET 10.0.13: raw clipboard data is `System.NotSupportedException: BinaryFormatter is not supported in clipboard or drag-and-drop operations.` Plain-text round-trip succeeds. An earlier sandbox-denied run is excluded from this evidence.
+
+The [guarded reproduction](../tests/NativeClipboardRepro/README.md) supplies synthetic data only. This isolates the tested native serialization path from shortcut routing; it does not prove every native clipboard operation fails. **Successful component Copy All/Paste All remains unaccepted.** No vendor binary, runtime policy or unsafe compatibility workaround was changed. Keep this blocker on Core #4 pending a vendor fix or separately scoped remedy and retest.
+
+### Corrected docked Legacy editor
+
+Before the fix, physical Ctrl+Alt+F8 ran an ordinary mod command once with `EditorView` focused and `textInput: false`. The focused WPF ancestry regression also failed. After the fix, all **201 Core WPF controls checks** pass, including seven new recognition/ancestry checks. Four separate native routed-event assertions pass for recognition, ordinary single/chord exclusion, explicit single/chord opt-ins and Escape cancellation. They are labeled `physicalInputTested: false`; events before the `editor-ready` marker belong to that automated regression.
+
+External input after that marker establishes the physical result:
+
+- Windows helper: harmless Lua comment entry, native Ctrl+Z Undo, Ctrl+Y Redo and Ctrl+F Find work. Ordinary Ctrl+Alt+F8 stays unhandled by Core and inactive; opted-in Ctrl+Alt+F10 executes once.
+- Owner: Ctrl+Alt+F9 then G stays unhandled/inactive; Ctrl+Alt+F11 then G executes once. Ctrl+Alt+F11 then Escape then G adds no execution. Escape key-down is absent and release is present/handled; the existing release fallback cancels correctly. The owner reports that Escape stopped Computer Use. No further GUI input was issued.
+- Windows helper, before the owner check: F5 displays “Give your core a name!” for the unnamed synthetic Core, without deployment. F6 enters local Emulate (`connected=true`, `emulator=true`); F7 returns to Design with both false. Receipts identify EditorView focus and `textInput: true`; effective bindings and native gesture collections remain F5/F6/F7. These results use key receipts and visible/recorded outcomes, not separate native command-entry receipts.
+
+Final physical counters: ordinary single **0**, ordinary chord **0**, opted-in single **1**, opted-in chord **1**. All owner sequences completed within ten seconds. The tested corrected Core runtime SHA-256 is `77B96DE005281901301E2A529B9C652E40CE3B94A2F7023B8C310D8741B8F3E2`; the physical fixture is `B54589A3C15F4C518DB043BF1E20ABE8D1CD84C1F12503DEBF065A01D5A48D98`. Final fixture-only documentation/comment changes do not alter this attribution. Final fixture and standalone diagnostic Release builds pass with zero warnings/errors, all 45 catalog checks pass, and launcher parsing plus 12 invalid mode combinations pass before filesystem side effects.
+
+After preserving receipts and stopping only the disposable Designer and its children, native Prefs.xml, both HardLink files and mod preferences matched their same-start SHA-256 hashes byte-for-byte. Custom bindings, including Ctrl+,, are preserved without restoration. No regular installation, release, signed catalog or hardware deployment changed. The native clipboard blocker remains open; detached script hosts remain unsupported. Other browser/editor hosts, runtime UCI popups, alternate layouts/AltGr and OS-reserved combinations are not accepted by this run. The owner uses US layout only and requests no reserved shortcuts. Existing feature proposals stay separate.
 
 ## Historical 0.1.4 build and scope
 

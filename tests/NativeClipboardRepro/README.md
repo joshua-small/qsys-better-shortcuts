@@ -1,0 +1,7 @@
+# Native component-control clipboard reproduction
+
+Manual Windows desktop diagnostic for the hash-guarded Designer 10.5.0 build. It loads the installed Q-SYS assemblies in a separate .NET 10 STA process, creates a synthetic `CopyControlSet` (`gain`, `mute=0`), and calls the native clipboard wrapper. It does not start Designer, load Mods Core/Better Shortcuts, read preferences or connect to hardware. **It replaces the Windows clipboard contents.**
+
+Build with `dotnet build tests/NativeClipboardRepro/ClipboardRepro.csproj -c Release --artifacts-path artifacts/clipboard`, then run the resulting DLL on Windows with the installed Designer directory as its sole argument. Use a process with normal desktop clipboard access. A sandbox access-denied exception is not evidence of a native serialization failure. The BinaryFormatter project setting matches Designer's runtime configuration; it does not repair the clipboard path or recommend enabling an unsafe formatter in production.
+
+Observed on .NET 10.0.13: the custom format is present, the native typed read returns null, and the raw value is `System.NotSupportedException: BinaryFormatter is not supported in clipboard or drag-and-drop operations.` A plain-text round trip succeeds and `modsLoaded` is false. This explains the tested disabled native Paste All path; it is not a successful copy/paste acceptance result. No vendor binary or workaround is supplied.
