@@ -9,8 +9,8 @@ using QsysMods.Core;
 
 namespace Designer.Modules.ShortcutsLab;
 
-// Observer by default; the explicit -Suite launcher option runs native integration
-// checks. Never load outside the profile-redirected disposable acceptance copy.
+// Observer by default; the explicit -Suite or -Contexts launcher option runs native
+// integration checks. Never load outside the profile-redirected acceptance copy.
 public sealed partial class Probe : ModModule
 {
     private DispatcherTimer? timer;
