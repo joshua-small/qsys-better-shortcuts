@@ -10,10 +10,11 @@ using QsysMods.Core;
 namespace Designer.Modules.ShortcutsLab;
 
 // Observer by default; -Suite/-Contexts run native integration checks and
-// -Physical prepares a human-input fixture. Use only the redirected acceptance copy.
+// -Physical/-Editors prepare human-input fixtures. Use only the redirected acceptance copy.
 public sealed partial class Probe : ModModule
 {
     private DispatcherTimer? timer;
+    private static bool editorMode;
     private static readonly string Output = Path.Combine(AppContext.BaseDirectory, "shortcut-evidence");
     private static readonly Type Adapters = typeof(BetterShortcuts.ShortcutModule).Assembly.GetType("Designer.Modules.BetterShortcuts.ExpandedActions")!;
     private static object? Get(object? item, string name) => item?.GetType().GetProperty(name, Host.Instance)?.GetValue(item)
@@ -32,8 +33,9 @@ public sealed partial class Probe : ModModule
             bool suite = Environment.GetEnvironmentVariable("QSYS_SHORTCUTS_LAB_SUITE") == "1";
             bool contexts = Environment.GetEnvironmentVariable("QSYS_SHORTCUTS_LAB_CONTEXTS") == "1";
             bool physical = Environment.GetEnvironmentVariable("QSYS_SHORTCUTS_LAB_PHYSICAL") == "1";
+            editorMode = Environment.GetEnvironmentVariable("QSYS_SHORTCUTS_LAB_EDITORS") == "1";
             if (contexts) RegisterContextCommands();
-            if (physical) RegisterPhysicalCommands();
+            if (physical || editorMode) RegisterPhysicalCommands();
             if (suite)
             {
                 Commands.Register(new("shortcuts-lab/legacy", "Lab legacy default", "Acceptance", () => { }, () => true,
@@ -44,10 +46,10 @@ public sealed partial class Probe : ModModule
             timer = new DispatcherTimer(DispatcherPriority.ContextIdle) { Interval = TimeSpan.FromMilliseconds(300) };
             timer.Tick += async (_, _) =>
             {
-                try { Snapshot(main); if (physical) ObservePhysicalWindows(); }
+                try { Snapshot(main); if (physical || editorMode) ObservePhysicalWindows(); }
                 catch (Exception ex) { File.WriteAllText(Path.Combine(Output, "observer-error.txt"), ex.ToString()); }
-                if ((suite || contexts || physical) && !started && main.IsEnabled && File.Exists(SharedSettings.PathName) && Mods.IsReady("better-shortcuts"))
-                { started = true; await Task.Delay(2500); if (physical) await PreparePhysical(main); else if (contexts) await ContextLayoutAcceptance(main); else await Acceptance(main); }
+                if ((suite || contexts || physical || editorMode) && !started && main.IsEnabled && File.Exists(SharedSettings.PathName) && Mods.IsReady("better-shortcuts"))
+                { started = true; await Task.Delay(2500); if (editorMode) await PrepareEditors(main); else if (physical) await PreparePhysical(main); else if (contexts) await ContextLayoutAcceptance(main); else await Acceptance(main); }
             };
             timer.Start();
         });
@@ -80,6 +82,14 @@ public sealed partial class Probe : ModModule
             layerItems = Items(Get(tree, "Items")).Select(l => new { type = l.GetType().FullName, name = Get(l, "Name") }),
             nameEditor = (Adapter("NameEditor") as FrameworkElement)?.Name,
             swatch = Adapter("FocusedSwatch")?.GetType().FullName,
+            hostState = editorMode ? HostSelection.ReadHostState() : null,
+            nativeRunCommands = editorMode ? new[] { "Connect", "Emulate", "Disconnect" }.Select(name => {
+                var entry = Commands.All.Single(c => c.Definition.Native?.Name == name);
+                var native = entry.Definition.Native!;
+                return new { name, available = native.CanExecute(null, main),
+                    effective = ModControls.Bindings.Display(entry.Definition.Id, ModControls.Current.Bindings.Overrides),
+                    gestures = native.InputGestures.OfType<KeyGesture>().Select(g => new { key = g.Key.ToString(), modifiers = g.Modifiers.ToString() }) };
+            }).ToArray() : null,
             commands
         };
         File.WriteAllText(Path.Combine(Output, "state.json"), JsonSerializer.Serialize(state, new JsonSerializerOptions { WriteIndented = true }));
