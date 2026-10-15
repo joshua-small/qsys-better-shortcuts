@@ -47,6 +47,41 @@ On 2026-10-14, coordinated local Core and Better Shortcuts 0.1.5 builds were ins
 
 The installed preferences file matched its original SHA-256 after every installation (`ca14bfb4c4a98ce8d4f6c2ebefa447389da43844bc96515467c1e9f6365c447e`). No bulk default overwrite was applied to personal settings. The existing Preferences Ctrl+, assignment remains preserved.
 
-F2 initially did nothing for a selected UCI control. The name-field lookup was corrected, built and installed. **Its final Designer retest remains pending:** the Windows automation helper subsequently failed with `foreground window did not report a process id`, including after refreshing window selection. New chord recorder capture/save, bulk overwrite, live chord-remap menu refresh and native context-menu labels remain covered by offline state/planner/presentation tests, not by a completed 0.1.5 UI run. Historical saved-remap tests above and the owner's single-key recorder acceptance remain separate evidence.
+F2 initially did nothing for a selected UCI control. A correction using the native `_ControlName` and `tbCodeName` fields was built and installed. At the end of that run, its Designer retest was pending: the Windows automation helper failed with `foreground window did not report a process id`, including after refreshing window selection. Recorder, bulk-overwrite and live-refresh coverage at that point was limited to offline tests. The subsequent disposable run below supersedes that pending UCI F2 result and extends native component acceptance; historical saved-remap tests and the owner's single-key recorder acceptance remain separate evidence.
 
-Other pending physical checks include left/all dock keys, the complete UCI layer/creation/context matrix, graphic-tool placement/undo, name-field focus and color-swatch focus. The implementation and proposed defaults are listed in [the keymap](DEFAULT-KEYMAP.md); untested adapters and remaining blank proposals stay tracked in [issue #4](https://github.com/joshua-small/qsys-better-shortcuts/issues/4). No live Core, DSP or hardware behavior was exercised.
+The implementation and proposed defaults are listed in [the keymap](DEFAULT-KEYMAP.md); untested adapters and remaining blank proposals stay tracked in [issue #4](https://github.com/joshua-small/qsys-better-shortcuts/issues/4). No live Core, DSP or hardware behavior was exercised.
+
+## Disposable acceptance and review fixes (2026-10-15 UTC)
+
+This run used a separate Designer 10.5.0 copy with native Roaming, Local, Documents and User profile folders redirected before startup. The runtime matched merged Core main `3ea01ac7bf66f2f80b636f4ceff4380dfb33ee02` (reviewed source head `d4ed9a1`). Better Shortcuts started at `9d3068d` and was rebuilt with the two review fixes below. No regular installation or public release was performed. The guarded [DesignerAcceptance fixture](../tests/DesignerAcceptance/README.md) and raw receipts are separate from the product; vendor binaries, preferences, captures and synthetic designs remain local.
+
+Two defects were reproduced and corrected:
+
+- **Review mod defaults omitted original single-key registrations.** It now includes a mod's `DefaultGesture`, as well as sequence defaults and mod-declared defaults on native actions. It still excludes ordinary Q-SYS defaults, so bulk adoption does not reset an unrelated native Copy remap.
+- **Spatial/all-dock actions changed floating panels.** Actipro reports `State=Docked` for a tool inside a floating host. Filtering `IsFloating` explicitly keeps that panel out of spatial and all-dock actions. Native regression checks and physical right/all-dock checks passed with floating Properties and main-window panels together.
+
+The final Release build completed with zero warnings/errors. The 45 offline catalog checks and 41 Windows WPF formatting/recorder-state/wheel checks passed. The actual disposable Designer passed **84 native integration assertions** through the fixture:
+
+- Bulk review includes a legacy mod default, names the displaced owner, and excludes unmodified native defaults. Review Cancel and Preferences Cancel preserve saved settings; Apply stays staged until OK. Overwrite preserves the donor's unrelated alternative and an unrelated native remap, then persists to live JSON.
+- The actual recorder accepts two WPF routed strokes, cancels on Escape and stages on Enter without closing Preferences. Preferences OK saves the chord to JSON and immediately refreshes the real View menu hint. This is component/routed-event acceptance, not physical recorder input.
+- Floating Properties remains floating under right/all-dock toggles; a closed Properties panel stays closed.
+- Each UCI button, knob, text, fader, meter and indicator action exposes the native subtype chooser; the first subtype inserts one object and Undo removes exactly that object. Flexbox insertion/Undo also passes. These checks do not enumerate every subtype.
+- All seven library-category adapters expand and select the expected category without inserting a component.
+
+| Physical input in the disposable Designer | Observed result |
+| --- | --- |
+| Left/all dock shortcuts; final right/all dock retests | Main panels hide/restore; floating Properties is unchanged by the corrected spatial/all actions. |
+| F2 on a selected UCI button | Focuses `_ControlName` and selects the complete `Control_1` name. The prior UCI F2 blocker is resolved. |
+| Text, Header, Group Box and Polygon graphic shortcuts | Native tools create the intended objects by drag or polygon vertices; Ctrl+Z removes each inserted object. |
+| UCI layer hide/show and lock/unlock | Selected layer state changes; the locked layer prevents the button creation action. |
+| UCI layer collapse/expand and Alt+Up/Down | Collapse/expand work; two layers reorder in both directions with the layer tree focused. |
+| UCI Script/Layout and dock/Toolbox chords | Switches the active surface, including return from focused docked Monaco with explicit opt-in; local dock collapse and Toolbox restoration work. |
+| Focused color swatch, then I | Opens its native palette; Escape dismisses it. The shortcut remains scoped to swatch focus. |
+| Alt+2 and Video category chord | Restores/selects Schematic Pages and expands/selects Video Components respectively. |
+| Live JSON remap to Ctrl+Alt+F11 then P | Dispatch changes without restart and hides/restores Design Elements. Escape, an invalid completion and expiry of the displayed ten-second wait leave the panel unchanged. |
+
+Native text-field context menus retained their local Ctrl+C hint while the global Copy command was remapped. This verifies local editor preservation, not live refresh of a global context-menu label. The observed canvas context menu displayed icons rather than shortcut labels; Core's automated presentation tests remain the evidence for that general path.
+
+The original Designer process was preserved. Personal HardLink, HardLinkNames and mod preferences remained byte-identical to their start-of-run hashes. Personal `Prefs.xml` changed during the session; compared with the preserved earlier XML baseline, the only changed entry was `assetRefreshToken`. Only the hash was captured at this run's start, so that comparison does not establish the exact within-run XML delta or its writer. No process-level writer trace was collected in this run, and no token value was published or restored. Native profile-redirection receipts and scoped process paths were checked independently of those personal-file hashes.
+
+The owner explicitly chose automated recorder coverage and left **physical two-stroke recorder/Preferences save acceptance open**. Physical delivery into floating Component Controls was not reliably attributable through the input helper. Detached Actipro script windows remain outside Core's attached scopes. Schematic `tbCodeName` F2, swapped dock layouts, alternate keyboard layouts/AltGr and the wider editor/context matrix remain unaccepted. These limits stay tracked in [Core #4](https://github.com/joshua-small/qsys-mods-core/issues/4), [Shortcuts #2](https://github.com/joshua-small/qsys-better-shortcuts/issues/2) and [Shortcuts #4](https://github.com/joshua-small/qsys-better-shortcuts/issues/4). Public catalog dependencies and release work remain separate.

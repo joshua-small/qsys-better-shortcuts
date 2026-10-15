@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net10.0-windows</TargetFramework><UseWPF>true</UseWPF><EnableWindowsTargeting>true</EnableWindowsTargeting><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><AssemblyName>Designer.Modules.ShortcutsLab</AssemblyName></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../../Designer.Modules.BetterShortcuts.csproj" /><Reference Include="ModuleCommon"><HintPath>$(DesignerDir)/ModuleCommon.dll</HintPath><Private>false</Private></Reference></ItemGroup>
+</Project>
