@@ -1,6 +1,6 @@
 # Designer shortcut acceptance — 10.5.0
 
-Physical two-stroke recorder/Preferences-save acceptance is complete for the tested build. The [evidence reconciliation](#physical-recorder-evidence-reconciliation-2026-10-15) distinguishes that owner-assisted test from the separate 92-assertion automated context/layout run and retains the remaining physical-input limits.
+Physical two-stroke recorder/Preferences-save and populated floating Component Controls acceptance are complete for the tested builds. The [latest floating-window and native icon-toolbar results](#floating-component-controls-and-native-icon-toolbar-2026-10-15) distinguish human input, native property observation and the expanded 95-assertion automated run. Earlier evidence remains below as version-specific history.
 
 ## Historical 0.1.4 build and scope
 
@@ -135,3 +135,26 @@ Review of the original retest session and preserved receipts is sufficient to cl
 The same saved JSON confirms Design Elements restored to Shift+Alt+D, Copy retaining its unrelated F24 then G alternative, Preferences retaining Ctrl+, and the Tools defaults Ctrl+Alt+P / Ctrl+I. The native F2 receipt records `tbCodeName` with a 13-character selection. Contemporaneous hash comparisons confirm preservation of personal **mod** preferences and the saved original design. They do not establish unchanged native `Prefs.xml` for that retest or resolve the earlier `assetRefreshToken` attribution.
 
 This accepts the observed path on Designer 10.5.0, Core `3ea01ac` and Shortcuts `21b87a9` (reviewed head `1c0e533`). Source comparison through Core PR #8 and Shortcuts PR #6 confirms the recorder, Preferences-save and chord-dispatch implementations are unchanged; the later product fixes concern open context-menu hints and inactive F2 editors. The later 92-assertion context/layout run remains separate automated evidence. No fresh physical run, separately observed Preferences reopening, application-restart persistence, alternate-layout coverage or physical floating-window delivery is claimed by this reconciliation. Those wider limits remain open; the whole Core issue is not closed.
+
+## Floating Component Controls and native icon toolbar (2026-10-15)
+
+This follow-up used the disposable, profile-redirected Designer 10.5.0 copy. Better Shortcuts product code remained at `21a186157147abe1a8472489be23e0263e0f77ea`; only its acceptance fixture and documentation changed. Core started at `59fb2eb`; the final integrated fixes are [Core `025786b`](https://github.com/joshua-small/qsys-mods-core/commit/025786b). Physical floating checks were performed before the native tooltip addition; the final integrated build passed the automated run and native popup checks below. Exact tested assembly hashes and raw receipts remain local.
+
+The `-Physical` fixture creates an unsaved Gain named PhysicalGain and passively logs a small whitelist of test keys, receiving windows, focus types and command counts. It registers test commands through Core without synthesizing key events. The owner supplied keyboard input because the input helper could activate the main window instead of the floating host. Each accepted run was attributed to the actual `Gain (PhysicalGain) Controls` Actipro floating host containing `QSC.QSys.windows.ComponentInfo`, with its TextBox focused, not inferred from successful execution alone.
+
+| Check | Evidence and result |
+| --- | --- |
+| Ordinary-command exclusion | In populated floating Component Controls, physical Ctrl+Alt+F8 and Ctrl+Alt+F9 then G did not dispatch the ordinary test commands. |
+| Explicit text opt-in | Physical Ctrl+Alt+F10 and Ctrl+Alt+F11 then G dispatched their opted-in commands once per valid input. |
+| Close/reopen | The owner closed only Component Controls, reopened it with Ctrl+I from the selected Gain and repeated both opted-in inputs. On the corrected build the final counts were exactly two singles and two chords, with no duplicate dispatch. |
+| Escape cancellation | One initial sequence contained Escape release but no observed Escape key-down, leaving the chord armed. Core now cancels on release as a fallback. The owner's corrected-build Escape retest dispatched nothing; that retest contained both down/up, so it does not alone prove the missing-down path. |
+| Missing Escape-down regression | Offline WPF tests failed before the fix. Both the final WPF suite and native floating route deliberately omit Escape down, verify release cancellation and verify a fresh valid chord still executes once. |
+| Actual native icon toolbar | Right-clicking blank schematic canvas beside the selected Gain opened Designer's `PopupToolBar`. Its native Copy tooltip was originally just `Copy`. The fix showed `Copy (Ctrl+C or Ctrl+Insert)`, then `Copy (Ctrl+Alt+F12 then G)` after live JSON remapping, `Copy` after Clear, and the original defaults after Reset and reopen. |
+
+The missing Escape key-down is not attributed to Actipro or Designer: an external input helper's emergency-stop interception is also possible. The fix is a defensive cancellation fallback. The popup check observed the actual native tooltip property and command identity; it does not claim a separate hover-rendering check or button execution. Core preserves rich tooltip objects, native commands and original close-time presentation, with offline regression coverage for remap/Clear/Reset, reopen and disposal.
+
+The final Release builds had zero warnings/errors. **194 Core WPF checks** and **95 native automated context/layout assertions** passed. The latter retain the earlier 92 cases and add three floating Escape-release assertions. Automated routing, human input and native property observations remain distinct evidence layers.
+
+The owner confirmed **US layout only and no reserved shortcuts**. Alternate layouts/AltGr and OS-reserved combinations are therefore outside this acceptance scope and remain untested, rather than blocking this user's floating-window result. Detached Actipro script windows remain unsupported. Broader physical browser/editor contexts, native F5/F6/F7 preservation and additional icon templates remain tracked in [Core #4](https://github.com/joshua-small/qsys-mods-core/issues/4) and [Shortcuts #2](https://github.com/joshua-small/qsys-better-shortcuts/issues/2). Do not repeat the already accepted recorder/save test to close those different cases.
+
+After the final run, the disposable Designer and its child Chromium processes were stopped. Personal `Prefs.xml`, HardLink, HardLinkNames and mod preferences matched their same-start SHA-256 values byte-for-byte, including the custom Ctrl+, binding. This does not identify the writer of the earlier historical `assetRefreshToken` change. No personal settings were restored or overwritten; no regular installation, catalog change or public release occurred.

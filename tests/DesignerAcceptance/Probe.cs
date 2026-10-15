@@ -9,8 +9,8 @@ using QsysMods.Core;
 
 namespace Designer.Modules.ShortcutsLab;
 
-// Observer by default; the explicit -Suite or -Contexts launcher option runs native
-// integration checks. Never load outside the profile-redirected acceptance copy.
+// Observer by default; -Suite/-Contexts run native integration checks and
+// -Physical prepares a human-input fixture. Use only the redirected acceptance copy.
 public sealed partial class Probe : ModModule
 {
     private DispatcherTimer? timer;
@@ -31,7 +31,9 @@ public sealed partial class Probe : ModModule
             Directory.CreateDirectory(Output);
             bool suite = Environment.GetEnvironmentVariable("QSYS_SHORTCUTS_LAB_SUITE") == "1";
             bool contexts = Environment.GetEnvironmentVariable("QSYS_SHORTCUTS_LAB_CONTEXTS") == "1";
+            bool physical = Environment.GetEnvironmentVariable("QSYS_SHORTCUTS_LAB_PHYSICAL") == "1";
             if (contexts) RegisterContextCommands();
+            if (physical) RegisterPhysicalCommands();
             if (suite)
             {
                 Commands.Register(new("shortcuts-lab/legacy", "Lab legacy default", "Acceptance", () => { }, () => true,
@@ -42,10 +44,10 @@ public sealed partial class Probe : ModModule
             timer = new DispatcherTimer(DispatcherPriority.ContextIdle) { Interval = TimeSpan.FromMilliseconds(300) };
             timer.Tick += async (_, _) =>
             {
-                try { Snapshot(main); }
+                try { Snapshot(main); if (physical) ObservePhysicalWindows(); }
                 catch (Exception ex) { File.WriteAllText(Path.Combine(Output, "observer-error.txt"), ex.ToString()); }
-                if ((suite || contexts) && !started && main.IsEnabled && File.Exists(SharedSettings.PathName) && Mods.IsReady("better-shortcuts"))
-                { started = true; await Task.Delay(2500); if (contexts) await ContextLayoutAcceptance(main); else await Acceptance(main); }
+                if ((suite || contexts || physical) && !started && main.IsEnabled && File.Exists(SharedSettings.PathName) && Mods.IsReady("better-shortcuts"))
+                { started = true; await Task.Delay(2500); if (physical) await PreparePhysical(main); else if (contexts) await ContextLayoutAcceptance(main); else await Acceptance(main); }
             };
             timer.Start();
         });
