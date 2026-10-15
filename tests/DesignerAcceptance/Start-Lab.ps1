@@ -5,10 +5,11 @@ param(
     [switch]$Fresh,
     [switch]$Suite,
     [switch]$Contexts,
-    [switch]$Physical
+    [switch]$Physical,
+    [switch]$Editors
 )
 $ErrorActionPreference = 'Stop'
-if (@($Suite, $Contexts, $Physical).Where({ $_ }).Count -gt 1) { throw 'Choose only one of -Suite, -Contexts or -Physical.' }
+if (@($Suite, $Contexts, $Physical, $Editors).Where({ $_ }).Count -gt 1) { throw 'Choose only one of -Suite, -Contexts, -Physical or -Editors.' }
 $lab = (Resolve-Path -LiteralPath $LabDirectory).Path.TrimEnd('\')
 $build = (Resolve-Path -LiteralPath $BuildDirectory).Path
 $coreBuild = (Resolve-Path -LiteralPath $CoreBuildDirectory).Path
@@ -47,6 +48,7 @@ $psi.Environment['TEMP'] = "$lab\profile\Temp"; $psi.Environment['TMP'] = "$lab\
 $psi.Environment['QSYS_SHORTCUTS_LAB_SUITE'] = $(if ($Suite) { '1' } else { '0' })
 $psi.Environment['QSYS_SHORTCUTS_LAB_CONTEXTS'] = $(if ($Contexts) { '1' } else { '0' })
 $psi.Environment['QSYS_SHORTCUTS_LAB_PHYSICAL'] = $(if ($Physical) { '1' } else { '0' })
+$psi.Environment['QSYS_SHORTCUTS_LAB_EDITORS'] = $(if ($Editors) { '1' } else { '0' })
 $p = [Diagnostics.Process]::Start($psi)
 @{ ProcessId = $p.Id; ApplicationDirectory = $lab } | ConvertTo-Json | Set-Content -LiteralPath "$lab\lab-process.json"
 $p.Id
