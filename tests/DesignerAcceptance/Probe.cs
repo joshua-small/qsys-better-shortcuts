@@ -30,6 +30,8 @@ public sealed partial class Probe : ModModule
                 throw new InvalidOperationException("Native preferences are not redirected.");
             Directory.CreateDirectory(Output);
             bool suite = Environment.GetEnvironmentVariable("QSYS_SHORTCUTS_LAB_SUITE") == "1";
+            bool contexts = Environment.GetEnvironmentVariable("QSYS_SHORTCUTS_LAB_CONTEXTS") == "1";
+            if (contexts) RegisterContextCommands();
             if (suite)
             {
                 Commands.Register(new("shortcuts-lab/legacy", "Lab legacy default", "Acceptance", () => { }, () => true,
@@ -42,8 +44,8 @@ public sealed partial class Probe : ModModule
             {
                 try { Snapshot(main); }
                 catch (Exception ex) { File.WriteAllText(Path.Combine(Output, "observer-error.txt"), ex.ToString()); }
-                if (suite && !started && main.IsEnabled && File.Exists(SharedSettings.PathName) && Mods.IsReady("better-shortcuts"))
-                { started = true; await Task.Delay(2500); await Acceptance(main); }
+                if ((suite || contexts) && !started && main.IsEnabled && File.Exists(SharedSettings.PathName) && Mods.IsReady("better-shortcuts"))
+                { started = true; await Task.Delay(2500); if (contexts) await ContextLayoutAcceptance(main); else await Acceptance(main); }
             };
             timer.Start();
         });

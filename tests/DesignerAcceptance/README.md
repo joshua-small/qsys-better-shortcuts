@@ -21,3 +21,9 @@ With `-Suite`, the module registers two fixture commands and exercises the actua
 Without `-Suite`, the module only observes the selected document, focus, layer state, panel states (including `IsFloating`), command availability and effective bindings. It does not record typed text or inject input. `shortcut-evidence/state.json` refreshes during manual/Computer Use checks. `result.json` reports suite success, individual assertions and errors; absence of a result is not a pass. Receipts, settings, designs and vendor binaries stay local and out of Git.
 
 The scoped physical checks and remaining limits are recorded in [Designer acceptance](../../docs/DESIGNER-VALIDATION-10.5.md). Compare hashes of personal preferences and verify the original Designer process remains running after testing; a lab marker alone is insufficient evidence of isolation.
+
+## Context and layout mode
+
+Pass `-Contexts` instead of `-Suite` to exercise the remaining context/layout matrix. The fixture registers synthetic commands only in the redirected test process, raises WPF events through actual Designer controls, manipulates native dock layouts, and creates/undoes synthetic schematic objects and a UCI. It checks shared prefixes, held keys, availability, focus/click/modal/page-change/timeout cancellation, swapped/mixed docks, sidebar focus, schematic F2, nested schematics, docked Monaco and floating Component Controls. Detached script windows are checked as an unsupported scope: even opted-in commands must remain inactive there.
+
+A fixture context menu using the real native Copy command exercises the actual opening route and live JSON remap/Clear/Reset. It does not stand for every Designer-specific icon-menu template. `contexts-result.json` is the terminal pass/fail receipt; `progress.json` records completed assertions but is not a pass. This mode never exercises the physical shortcut recorder. Keep that acceptance open separately.

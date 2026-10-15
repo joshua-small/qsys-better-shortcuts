@@ -14,7 +14,7 @@ public sealed partial class Probe
 {
     private static readonly List<string> checks = [];
     private static void Check(bool value, string name)
-    { if (!value) throw new InvalidOperationException(name); checks.Add(name); }
+    { if (!value) throw new InvalidOperationException(name); checks.Add(name); File.WriteAllText(Path.Combine(Output,"progress.json"), JsonSerializer.Serialize(new { checks }, SettingsJson.Format)); }
     private static JsonObject Read() => SettingsJson.Parse(File.ReadAllText(SharedSettings.PathName));
     private static async Task Until(Func<bool> ready)
     { for (int i = 0; i < 60; i++) { await Task.Delay(250); if (ready()) return; } throw new TimeoutException(SharedSettings.Error ?? "Acceptance timed out"); }
