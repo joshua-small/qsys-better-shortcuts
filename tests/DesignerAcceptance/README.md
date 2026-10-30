@@ -18,7 +18,32 @@ The launcher verifies the exact Designer/ModuleCommon hashes and the profile mar
 
 With `-Suite`, the module registers two fixture commands and exercises the actual Preferences page: legacy defaults, conflict disclosure, preserved alternatives, bulk Cancel/Apply/OK, recorder routed events, JSON persistence and menu refresh. It also checks floating/closed panels, UCI subtype creation and undo, and library-category adapters. The suite deliberately changes the disposable layout and creates an unsaved synthetic UCI. It leaves two test remaps for follow-on checks and saves the original lab settings alongside the receipt. These are native component/routed-event checks, not physical keyboard tests.
 
-With none of `-Suite`, `-Contexts`, `-Physical`, `-Editors` or `-Menus`, the module only observes the selected document, focus, layer state, panel states (including `IsFloating`), command availability and effective bindings. It does not record typed text or inject input. `shortcut-evidence/state.json` refreshes during manual/Computer Use checks. `result.json` reports `-Suite` success, individual assertions and errors; absence of a result is not a pass. Receipts, settings, designs and vendor binaries stay local and out of Git.
+With none of `-Suite`, `-Reviews`, `-Contexts`, `-Physical`, `-Editors` or `-Menus`, the module only observes the selected document, focus, layer state, panel states (including `IsFloating`), command availability and effective bindings. It does not record typed text or inject input. `shortcut-evidence/state.json` refreshes during manual/Computer Use checks. `result.json` reports `-Suite` success, individual assertions and errors; absence of a result is not a pass. Receipts, settings, designs and vendor binaries stay local and out of Git.
+
+## Review invalidation mode
+
+Use `-Reviews` alone for the focused review regression. The existing exact-build
+and redirected-profile guards still apply. This mode is compiled but requires
+execution before native acceptance can be claimed. It uses real Preferences
+sessions, Core draft notifications and command-registry notifications. It
+deliberately invokes the hidden old confirmation callback after invalidation to
+verify that even a queued confirmation cannot restore a stale plan.
+
+The cases cover individual overwrite, conflicting Reset and bulk review; newer
+unrelated assignments and editor permissions; registry changes during recording
+and review; normal overwrite exactly once with selection retention; Preferences
+Cancel; and a fresh bulk overwrite followed by OK/reopen. Core still plans every
+conflict. The fixture registers three temporary commands, uses F21-F24 for its
+synthetic assignments, and leaves the final accepted bindings only in the
+disposable profile. `reviews-settings-before.json` preserves that profile's
+starting settings. `reviews-result.json` is the terminal pass/fail receipt;
+partial `progress.json` is not a pass.
+
+The fixture uses routed events and direct native calls, not physical keys. After
+it passes, separately inspect the invalidation message, recorder focus and menu
+hint rendering with actual input. The launcher's supported Designer hashes have
+not been broadened: a different build requires separately reviewed preparation
+and acceptance, not deleting the guard.
 
 The scoped physical checks and remaining limits are recorded in [Designer acceptance](../../docs/DESIGNER-VALIDATION-10.5.md). Compare hashes of personal preferences and preserve any original Designer process that was running before testing; a lab marker alone is insufficient evidence of isolation.
 

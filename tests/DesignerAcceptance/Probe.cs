@@ -32,6 +32,7 @@ public sealed partial class Probe : ModModule
                 throw new InvalidOperationException("Native preferences are not redirected.");
             Directory.CreateDirectory(Output);
             bool suite = Environment.GetEnvironmentVariable("QSYS_SHORTCUTS_LAB_SUITE") == "1";
+            bool reviews = Environment.GetEnvironmentVariable("QSYS_SHORTCUTS_LAB_REVIEWS") == "1";
             bool contexts = Environment.GetEnvironmentVariable("QSYS_SHORTCUTS_LAB_CONTEXTS") == "1";
             bool physical = Environment.GetEnvironmentVariable("QSYS_SHORTCUTS_LAB_PHYSICAL") == "1";
             editorMode = Environment.GetEnvironmentVariable("QSYS_SHORTCUTS_LAB_EDITORS") == "1";
@@ -44,14 +45,21 @@ public sealed partial class Probe : ModModule
                     new KeyGesture(System.Windows.Input.Key.F23, ModifierKeys.Control | ModifierKeys.Alt)));
                 Commands.Register(new("shortcuts-lab/donor", "Lab custom donor", "Acceptance", () => { }, () => true));
             }
+            if (reviews)
+            {
+                Commands.Register(new("shortcuts-lab/review-target", "Review target", "Acceptance", () => { }, () => true,
+                    new KeyGesture(System.Windows.Input.Key.F23)));
+                Commands.Register(new("shortcuts-lab/review-donor", "Review donor", "Acceptance", () => { }, () => true));
+                Commands.Register(new("shortcuts-lab/review-unrelated", "Review unrelated", "Acceptance", () => { }, () => true));
+            }
             bool started = false;
             timer = new DispatcherTimer(DispatcherPriority.ContextIdle) { Interval = TimeSpan.FromMilliseconds(300) };
             timer.Tick += async (_, _) =>
             {
                 try { Snapshot(main); if (physical || editorMode) ObservePhysicalWindows(); if (menus) ObserveMenus(main); }
                 catch (Exception ex) { File.WriteAllText(Path.Combine(Output, "observer-error.txt"), ex.ToString()); }
-                if ((suite || contexts || physical || editorMode || menus) && !started && main.IsEnabled && File.Exists(SharedSettings.PathName) && Mods.IsReady("better-shortcuts"))
-                { started = true; await Task.Delay(2500); if (menus) await PrepareMenus(main); else if (editorMode) await PrepareEditors(main); else if (physical) await PreparePhysical(main); else if (contexts) await ContextLayoutAcceptance(main); else await Acceptance(main); }
+                if ((suite || reviews || contexts || physical || editorMode || menus) && !started && main.IsEnabled && File.Exists(SharedSettings.PathName) && Mods.IsReady("better-shortcuts"))
+                { started = true; await Task.Delay(2500); if (reviews) await ReviewAcceptance(main); else if (menus) await PrepareMenus(main); else if (editorMode) await PrepareEditors(main); else if (physical) await PreparePhysical(main); else if (contexts) await ContextLayoutAcceptance(main); else await Acceptance(main); }
             };
             timer.Start();
         });
