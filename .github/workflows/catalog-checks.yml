@@ -14,6 +14,7 @@ jobs:
         with:
           global-json-file: global.json
       - run: dotnet run --project tests/Catalog --configuration Release --artifacts-path artifacts/catalog
+      - run: dotnet run --project tests/Review --configuration Release --artifacts-path artifacts/review
   gestures:
     runs-on: windows-latest
     steps:

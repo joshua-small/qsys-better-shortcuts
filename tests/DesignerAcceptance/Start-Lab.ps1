@@ -4,6 +4,7 @@ param(
     [Parameter(Mandatory)][string]$CoreBuildDirectory,
     [switch]$Fresh,
     [switch]$Suite,
+    [switch]$Reviews,
     [switch]$Contexts,
     [switch]$Physical,
     [switch]$Editors,
@@ -12,7 +13,7 @@ param(
     [switch]$LegacyEditor
 )
 $ErrorActionPreference = 'Stop'
-if (@($Suite, $Contexts, $Physical, $Editors, $Menus).Where({ $_ }).Count -gt 1) { throw 'Choose only one of -Suite, -Contexts, -Physical, -Editors or -Menus.' }
+if (@($Suite, $Reviews, $Contexts, $Physical, $Editors, $Menus).Where({ $_ }).Count -gt 1) { throw 'Choose only one of -Suite, -Reviews, -Contexts, -Physical, -Editors or -Menus.' }
 if ($MenuBaseline -and !$Menus) { throw '-MenuBaseline requires -Menus.' }
 if ($LegacyEditor -and !$Editors) { throw '-LegacyEditor requires -Editors.' }
 $lab = (Resolve-Path -LiteralPath $LabDirectory).Path.TrimEnd('\')
@@ -51,6 +52,7 @@ $psi.Environment['DOTNET_TieredCompilation'] = '0'
 $psi.Environment['COMPlus_JitNoInline'] = '1'
 $psi.Environment['TEMP'] = "$lab\profile\Temp"; $psi.Environment['TMP'] = "$lab\profile\Temp"
 $psi.Environment['QSYS_SHORTCUTS_LAB_SUITE'] = $(if ($Suite) { '1' } else { '0' })
+$psi.Environment['QSYS_SHORTCUTS_LAB_REVIEWS'] = $(if ($Reviews) { '1' } else { '0' })
 $psi.Environment['QSYS_SHORTCUTS_LAB_CONTEXTS'] = $(if ($Contexts) { '1' } else { '0' })
 $psi.Environment['QSYS_SHORTCUTS_LAB_PHYSICAL'] = $(if ($Physical) { '1' } else { '0' })
 $psi.Environment['QSYS_SHORTCUTS_LAB_EDITORS'] = $(if ($Editors) { '1' } else { '0' })

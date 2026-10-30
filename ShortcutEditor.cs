@@ -142,17 +142,17 @@ internal static class ShortcutEditor
         editButtons.Children.Add(accept); editButtons.Children.Add(cancel); editing.Children.Add(editButtons);
         ShortcutRow? editingRow = null;
         bool reviewingDefaults = false;
-        BindingChange? pendingChange = null;
+        var changeReview = new ShortcutChangeReview<BindingChange>();
         void CloseEdit()
         {
-            editingRow = null; reviewingDefaults = false; pendingChange = null; gesture.Finish();
+            editingRow = null; reviewingDefaults = false; changeReview.Invalidate(); gesture.Finish();
             overlay.Visibility = Visibility.Collapsed;
             table.IsEnabled = search.IsEnabled = controls.IsEnabled = true;
             table.Focus();
         }
         void ShowChange(BindingChange? change)
         {
-            pendingChange = change; accept.IsEnabled = change is not null;
+            changeReview.Show(change); accept.IsEnabled = change is not null;
             var conflicts = change?.Conflicts ?? [];
             accept.Content = conflicts.Length > 0 ? "Overwrite" : "Accept";
             warning.Text = conflicts.Length == 0 ? "Enter accepts. Escape cancels. Preferences OK saves your changes."
@@ -161,17 +161,22 @@ internal static class ShortcutEditor
         }
         void CommitEdit()
         {
-            if (pendingChange is null || (editingRow is null && !reviewingDefaults)) return;
+            if (changeReview.Pending is null || (editingRow is null && !reviewingDefaults)) return;
+            var selectedId = editingRow?.Id;
             try
             {
-                bindings.Validate(new(pendingChange.Overrides, pendingChange.EditorOverrides));
-                draft = pendingChange.Overrides;
-                draftEditors = pendingChange.EditorOverrides;
-                shared.StageBindings(new(draft, draftEditors));
-                var selectedId = editingRow?.Id; CloseEdit(); Refresh(selectedId);
+                if (!changeReview.TryApply(
+                    change => bindings.Validate(new(change.Overrides, change.EditorOverrides)),
+                    change =>
+                    {
+                        draft = change.Overrides;
+                        draftEditors = change.EditorOverrides;
+                        shared.StageBindings(new(draft, draftEditors));
+                    })) return;
+                CloseEdit(); Refresh(selectedId);
                 status.Text = "Staged. Choose OK to save, or Cancel to discard.";
             }
-            catch (Exception ex) { warning.Text = status.Text = ex.Message; }
+            catch (Exception ex) { ShowChange(null); warning.Text = status.Text = ex.Message; }
         }
         void Edit(ShortcutRow selected, bool reset = false)
         {
@@ -180,7 +185,7 @@ internal static class ShortcutEditor
             title.Text = (reset ? "Restore default shortcuts: " : "Change shortcut: ") + selected.Command;
             gesture.Visibility = reset ? Visibility.Collapsed : Visibility.Visible;
             ShowChange(reset ? bindings.Prepare(id, null, draft, draftEditors) : null);
-            if (reset && pendingChange!.Conflicts.Length == 0) { CommitEdit(); return; }
+            if (reset && changeReview.Pending!.Conflicts.Length == 0) { CommitEdit(); return; }
             table.IsEnabled = search.IsEnabled = controls.IsEnabled = false;
             overlay.Visibility = Visibility.Visible;
             if (reset) accept.Focus();
@@ -310,6 +315,12 @@ internal static class ShortcutEditor
         };
         void SharedChanged()
         {
+            changeReview.Invalidate();
+            if (overlay.Visibility == Visibility.Visible)
+            {
+                CloseEdit();
+                status.Text = "Shortcut assignments or commands changed. Reopen the shortcut editor to review the current conflicts.";
+            }
             draft = new(shared.Value.Bindings.Overrides); draftEditors = new(shared.Value.Bindings.EditorOverrides ?? new());
             Refresh();
         }
