@@ -21,3 +21,12 @@ The focused [Designer review mode](../tests/DesignerAcceptance/README.md#review-
 exercises the real Preferences draft separately; its fixture is not included in
 the installable package. Historical application checks retain their original
 build and scope in the [validation guide](DESIGNER-VALIDATION-10.5.md).
+
+Focused Designer 10.5.0 and 10.5.1 checks passed for individual, Reset,
+and bulk review invalidation, registry changes, single-application confirmation,
+Cancel preservation, and OK/reopen persistence. Each run included 38 assertions
+against the real Preferences draft and command registry. Those routed-event
+checks are separate from the keyboard workflow: recording, accepting, saving,
+reopening and resetting a shortcut, including its native menu hint, were checked
+through the interface on 10.5.1. These results cover the tested workflows and do
+not expand the declared compatibility policy or establish hardware behavior.
